@@ -5,7 +5,7 @@ const API_URL = 'http://localhost:5137/api'; // Adjust port to match your .NET A
 
 export const bookApi = {
   getAll: async (): Promise<Book[]> => {
-    const response = await axios.get<Book[]>(`${API_URL}/books`);
+    const response = await axios.get<Book[]>(`${API_URL}/publisherbooks`);
     console.log(response.data);
     return response.data;
   },

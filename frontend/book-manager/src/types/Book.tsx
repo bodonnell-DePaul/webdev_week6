@@ -1,3 +1,5 @@
+import Publisher from "./Publisher";
+
 interface Book {
   id?: number;
   title: string;
@@ -5,6 +7,9 @@ interface Book {
   year: number;
   genre: string;
   isAvailable: boolean;
+  publisherId: number;
+  publisher: Publisher;
+  audioBookAvailable: boolean;
 }
 
 export default Book;

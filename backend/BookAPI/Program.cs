@@ -1,15 +1,27 @@
+using BookAPI.Data;
 using BookAPI.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// // Add services to the container.
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    options.JsonSerializerOptions.WriteIndented = true;
+});
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Book API", Version = "v1" });
 });
+
+// Add EF Core with SQLite
+builder.Services.AddDbContext<BookDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("SqliteConnection")));
 
 // Add CORS support
 builder.Services.AddCors(options =>
@@ -27,6 +39,13 @@ var app = builder.Build();
 // Configure middleware
 app.UseCors("AllowReactApp");
 
+// Ensure database is created with seed data
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<BookDbContext>();
+    dbContext.Database.EnsureCreated();
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -35,6 +54,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.MapControllers(); 
 
 app.MapGet("/HelloWorld", () =>
 {
@@ -43,73 +63,74 @@ app.MapGet("/HelloWorld", () =>
 .WithName("HelloWorld")
 .WithOpenApi();
 
-// In-memory database
-var books = new List<Book>
-{
-    new Book { Id = 1, Title = "To Kill a Mockingbird", Author = "Harper Lee", Year = 1960, Genre = "Fiction" },
-    new Book { Id = 2, Title = "1984", Author = "George Orwell", Year = 1949, Genre = "Dystopian" },
-    new Book { Id = 3, Title = "The Great Gatsby", Author = "F. Scott Fitzgerald", Year = 1925, Genre = "Classic" }
-};
-
 // GET - Get all books
-app.MapGet("/api/books", () => books)
+app.MapGet("/api/books", async (BookDbContext db) =>
+    await db.Books.ToListAsync())
    .WithName("GetAllBooks");
 
+// GET - Get all books with publishers
+app.MapGet("/api/publisherbooks", async (BookDbContext db) =>
+     await db.Books.Include(b => b.Publisher).ToListAsync())
+     
+.WithName("GetAllPublisherBooks");
+
 // GET - Get a specific book by ID
-app.MapGet("/api/books/{id}", (int id) =>
+app.MapGet("/api/books/{id}", async (int id, BookDbContext db) =>
 {
-    var book = books.Find(b => b.Id == id);
+    var book = await db.Books.FindAsync(id);
     return book == null ? Results.NotFound() : Results.Ok(book);
 })
 .WithName("GetBookById");
 
 // POST - Add a new book
-app.MapPost("/api/books", (Book book) =>
+app.MapPost("/api/books", async (Book book, BookDbContext db) =>
 {
-    book.Id = books.Count > 0 ? books.Max(b => b.Id) + 1 : 1;
-    books.Add(book);
+    db.Books.Add(book);
+    await db.SaveChangesAsync();
     return Results.Created($"/api/books/{book.Id}", book);
 })
 .WithName("AddBook");
 
 // PUT - Update a book
-app.MapPut("/api/books/{id}", (int id, Book updatedBook) =>
+app.MapPut("/api/books/{id}", async (int id, Book updatedBook, BookDbContext db) =>
 {
-    var index = books.FindIndex(b => b.Id == id);
-    if (index == -1) return Results.NotFound();
+    var book = await db.Books.FindAsync(id);
+    if (book == null) return Results.NotFound();
     
-    updatedBook.Id = id;
-    books[index] = updatedBook;
+    book.Title = updatedBook.Title;
+    book.Author = updatedBook.Author;
+    book.Year = updatedBook.Year;
+    book.Genre = updatedBook.Genre;
+    book.IsAvailable = updatedBook.IsAvailable;
+    
+    await db.SaveChangesAsync();
     return Results.NoContent();
 })
 .WithName("UpdateBook");
 
 // PATCH - Update book availability
-app.MapPatch("/api/books/{id}/availability", (int id, bool isAvailable) =>
+app.MapPatch("/api/books/{id}/availability", async (int id, bool isAvailable, BookDbContext db) =>
 {
-    // Book found = null;
-    // foreach(Book b in books){
-    //     if(b.Title.ToLower() == title.ToLower()){
-    //         found = b;
-    //     }
-    // }
-    var book = books.Find(b => b.Id == id);
+    var book = await db.Books.FindAsync(id);
     if (book == null) return Results.NotFound();
     
     book.IsAvailable = isAvailable;
+    await db.SaveChangesAsync();
     return Results.NoContent();
 })
 .WithName("UpdateBookAvailability");
 
 // DELETE - Delete a book
-app.MapDelete("/api/books/{id}", (int id) =>
+app.MapDelete("/api/books/{id}", async (int id, BookDbContext db) =>
 {
-    var index = books.FindIndex(b => b.Id == id);
-    if (index == -1) return Results.NotFound();
+    var book = await db.Books.FindAsync(id);
+    if (book == null) return Results.NotFound();
     
-    books.RemoveAt(index);
+    db.Books.Remove(book);
+    await db.SaveChangesAsync();
     return Results.NoContent();
 })
 .WithName("DeleteBook");
+
 
 app.Run();

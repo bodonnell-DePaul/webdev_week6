@@ -14,7 +14,10 @@ const BookForm = () => {
     author: '',
     year: new Date().getFullYear(),
     genre: '',
-    isAvailable: true
+    isAvailable: true,
+    publisher: '',
+    audioBookAvailable: false,
+    publisherId: -1
   });
 
   useEffect(() => {
@@ -116,6 +119,29 @@ const BookForm = () => {
             onChange={handleChange}
             required
           />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="publisher">Publisher</label>
+          <input
+            type="text"
+            id="publisher"
+            name="publisher"
+            value={book.publisher}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="form-group checkbox">
+          <input
+            type="checkbox"
+            id="audioBookAvailable"
+            name="audioBookAvailable"
+            checked={book.audioBookAvailable}
+            onChange={handleChange}
+          />
+          <label htmlFor="audioBookAvailable">Available</label>
         </div>
 
         <div className="form-group checkbox">

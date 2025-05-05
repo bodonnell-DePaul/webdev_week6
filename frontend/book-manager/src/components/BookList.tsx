@@ -63,6 +63,8 @@ const BookList = () => {
               <th>Author</th>
               <th>Year</th>
               <th>Genre</th>
+              <th>Publisher</th>
+              <th>AudioBook</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -74,6 +76,15 @@ const BookList = () => {
                 <td>{book.author}</td>
                 <td>{book.year}</td>
                 <td>{book.genre}</td>
+                <td>{book.publisher.name}</td>
+                <td>
+                  <button 
+                    className={book.audioBookAvailable ? 'status-available' : 'status-unavailable'}
+                    onClick={() => book.id && toggleAvailability(book.id, book.audioBookAvailable)}
+                  >
+                    {book.audioBookAvailable ? 'Available' : 'Unavailable'}
+                  </button>
+                </td>
                 <td>
                   <button 
                     className={book.isAvailable ? 'status-available' : 'status-unavailable'}
