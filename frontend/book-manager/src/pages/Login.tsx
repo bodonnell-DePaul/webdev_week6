@@ -1,33 +1,36 @@
 // frontend/book-manager/src/components/Login.tsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { configureBookApiWithBasicAuth, setBasicAuth } from '../services/authService';
+import { setBasicAuth } from '../services/authService';
+import { bookApi } from '../services/bookApi';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
   const navigate = useNavigate();
 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
     
     try {
-      const creds = await setBasicAuth(email, password);
-      const api = configureBookApiWithBasicAuth();
-      api.get('/publisherbooks'); // Test the credentials by making a request
-
-      if (creds) {
-        navigate('/books');
-      } else {
-        setError('Invalid credentials');
-      }
+      // Set the basic auth credentials
+      setBasicAuth(username, password);
+      
+      // Test credentials by making a request to the API
+      await bookApi.getAll();
+      
+      // If request was successful, redirect to books list
+      navigate('/books');
     } catch (err) {
-      setError('Login failed');
+      // Clear invalid credentials on failure
+      localStorage.removeItem('basicAuth');
+      setError('Invalid username or password');
+      console.error('Login failed:', err);
     } finally {
       setLoading(false);
     }
@@ -41,12 +44,12 @@ const Login = () => {
       
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label htmlFor="email">Email</label>
+          <label htmlFor="username">Username</label>
           <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text"
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             required
           />
         </div>
@@ -70,8 +73,6 @@ const Login = () => {
           {loading ? 'Logging in...' : 'Login'}
         </button>
       </form>
-      
-
     </div>
   );
 };

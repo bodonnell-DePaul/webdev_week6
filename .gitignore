@@ -151,3 +151,5 @@ backend/BookAPI/obj/Debug/net8.0/BookAPI.GeneratedMSBuildEditorConfig.editorconf
 backend/BookAPI/obj/Debug/net8.0/BookAPI.GlobalUsings.g.cs
 backend/BookAPI/obj/Debug/net8.0/apphost
 backend/BookAPI/obj/Debug/net8.0/BookAPI.csproj.FileListAbsolute.txt
+backend/BookAPI/bookapi.db-shm
+backend/BookAPI/bookapi.db-wal
