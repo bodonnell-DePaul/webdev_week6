@@ -33,30 +33,95 @@ For your lecture on authentication mechanisms in web applications using a TypeSc
 Frontend (React/TypeScript):
 ```typescript
 // frontend/book-manager/src/services/authService.tsx
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
+
+// Store a single instance of the authenticated API
+let apiInstance: AxiosInstance | null = null;
 
 // Basic auth helper for Book Manager
 export const setBasicAuth = (username: string, password: string) => {
   const credentials = btoa(`${username}:${password}`);
   localStorage.setItem('basicAuth', credentials);
+  
+  // Reset the API instance when credentials change
+  apiInstance = null;
+  
   return credentials;
 };
 
-// Update your existing bookApi to use Basic Auth
+// Clear authentication on logout
+export const clearAuth = () => {
+  localStorage.removeItem('basicAuth');
+  apiInstance = null;
+};
+
+// Check if user is authenticated
+export const isAuthenticated = () => {
+  return !!localStorage.getItem('basicAuth');
+};
+
+// Get a configured API instance with Basic Auth
 export const configureBookApiWithBasicAuth = () => {
-  const api = axios.create({
+  // Return existing instance if available
+  if (apiInstance) return apiInstance;
+  
+  // Create new instance if none exists
+  apiInstance = axios.create({
     baseURL: 'http://localhost:5137/api',
   });
 
-  api.interceptors.request.use(config => {
-    const credentials = localStorage.setItem('basicAuth');
+  apiInstance.interceptors.request.use(config => {
+    const credentials = localStorage.getItem('basicAuth');
     if (credentials) {
       config.headers.Authorization = `Basic ${credentials}`;
     }
     return config;
   });
 
-  return api;
+  return apiInstance;
+};
+```
+---
+
+Update your bookAPI.tsx file
+```typescript
+import Book from '../types/Book';
+import { configureBookApiWithBasicAuth } from './authService';
+
+// Use the API_URL from the authService
+export const bookApi = {
+  getAll: async (): Promise<Book[]> => {
+    const api = configureBookApiWithBasicAuth();
+    const response = await api.get<Book[]>(`/publisherbooks`);
+    return response.data;
+  },
+
+  getById: async (id: number): Promise<Book> => {
+    const api = configureBookApiWithBasicAuth();
+    const response = await api.get<Book>(`/books/${id}`);
+    return response.data;
+  },
+
+  create: async (book: Book): Promise<Book> => {
+    const api = configureBookApiWithBasicAuth();
+    const response = await api.post<Book>(`/books`, book);
+    return response.data;
+  },
+
+  update: async (id: number, book: Book): Promise<void> => {
+    const api = configureBookApiWithBasicAuth();
+    await api.put(`/books/${id}`, book);
+  },
+
+  updateAvailability: async (id: number, isAvailable: boolean): Promise<void> => {
+    const api = configureBookApiWithBasicAuth();
+    await api.patch(`/books/${id}/availability?isAvailable=${isAvailable}`);
+  },
+
+  delete: async (id: number): Promise<void> => {
+    const api = configureBookApiWithBasicAuth();
+    await api.delete(`/books/${id}`);
+  }
 };
 ```
 
