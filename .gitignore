@@ -135,3 +135,17 @@ dist
 .yarn/install-state.gz
 .pnp.*
 prompts.md
+backend/BookAPI/obj/BookAPI.csproj.nuget.dgspec.json
+backend/BookAPI/obj/BookAPI.csproj.nuget.g.props
+backend/BookAPI/obj/BookAPI.csproj.nuget.g.targets
+backend/BookAPI/obj/project.assets.json
+backend/BookAPI/obj/project.nuget.cache
+backend/BookAPI/obj/Debug/net8.0/.NETCoreApp,Version=v8.0.AssemblyAttributes.cs
+backend/BookAPI/obj/Debug/net8.0/BookAPI.AssemblyInfo.cs
+backend/BookAPI/obj/Debug/net8.0/BookAPI.AssemblyInfoInputs.cache
+backend/BookAPI/obj/Debug/net8.0/BookAPI.assets.cache
+backend/BookAPI/obj/Debug/net8.0/BookAPI.csproj.AssemblyReference.cache
+backend/BookAPI/obj/Debug/net8.0/BookAPI.GeneratedMSBuildEditorConfig.editorconfig
+backend/BookAPI/obj/Debug/net8.0/BookAPI.GlobalUsings.g.cs
+backend/BookAPI/obj/Debug/net8.0/apphost
+backend/BookAPI/obj/Debug/net8.0/BookAPI.csproj.FileListAbsolute.txt
