@@ -1,27 +1,23 @@
-using BookAPI.Data;
 using BookAPI.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Security.Claims;
+using BookAPI.Services;
+using BookAPI.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// // Add services to the container.
-builder.Services.AddControllers().AddJsonOptions(options =>
-{
-    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
-    options.JsonSerializerOptions.WriteIndented = true;
-});
-
+// Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Book API", Version = "v1" });
 });
-
-// Add EF Core with SQLite
-builder.Services.AddDbContext<BookDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("SqliteConnection")));
 
 // Add CORS support
 builder.Services.AddCors(options =>
@@ -34,6 +30,31 @@ builder.Services.AddCors(options =>
     });
 });
 
+// // Add services to the container.
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    options.JsonSerializerOptions.WriteIndented = true;
+});
+
+// Add EF Core with SQLite
+builder.Services.AddDbContext<BookDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("SqliteConnection")));
+// Configure basic authentication
+builder.Services.AddAuthentication("BasicAuthentication")
+    .AddScheme<AuthenticationSchemeOptions, BookApiBasicAuthHandler>("BasicAuthentication", null);
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("BasicAuthentication", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireClaim(ClaimTypes.NameIdentifier);
+    });
+});
+// Add services
+builder.Services.AddScoped<IUserService, UserService>();
+
 var app = builder.Build();
 
 // Configure middleware
@@ -45,6 +66,9 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<BookDbContext>();
     dbContext.Database.EnsureCreated();
 }
+// Add usage before your existing endpoints
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -72,7 +96,7 @@ app.MapGet("/api/books", async (BookDbContext db) =>
 app.MapGet("/api/publisherbooks", async (BookDbContext db) =>
      await db.Books.Include(b => b.Publisher).ToListAsync())
      
-.WithName("GetAllPublisherBooks");
+.WithName("GetAllPublisherBooks").RequireAuthorization();
 
 // GET - Get a specific book by ID
 app.MapGet("/api/books/{id}", async (int id, BookDbContext db) =>
@@ -131,6 +155,12 @@ app.MapDelete("/api/books/{id}", async (int id, BookDbContext db) =>
     return Results.NoContent();
 })
 .WithName("DeleteBook");
-
+// Add a protected route
+// app.MapGet("/api/protected-books", (ClaimsPrincipal user) =>
+// {
+//     return books;
+// })
+// .WithName("GetProtectedBooks")
+// .RequireAuthorization();
 
 app.Run();

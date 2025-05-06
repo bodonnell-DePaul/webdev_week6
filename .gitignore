@@ -135,6 +135,8 @@ dist
 .yarn/install-state.gz
 .pnp.*
 prompts.md
+backend/BookAPI/obj/*
+backend/BookAPI/bin/*
 backend/BookAPI/obj/BookAPI.csproj.nuget.dgspec.json
 backend/BookAPI/obj/BookAPI.csproj.nuget.g.props
 backend/BookAPI/obj/BookAPI.csproj.nuget.g.targets

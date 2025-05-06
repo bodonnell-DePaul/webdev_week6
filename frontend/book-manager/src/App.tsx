@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import BookList from './components/BookList';
 import BookForm from './components/BookForm';
+import Login from './pages/Login';
 import './App.css';
 
 function App() {
@@ -12,7 +13,8 @@ function App() {
         </header>
         <main className="app-content">
           <Routes>
-            <Route path="/" element={<BookList />} />
+            <Route path="/" element={<Login />} />
+            <Route path="/books" element={<BookList />} />
             <Route path="/add" element={<BookForm />} />
             <Route path="/edit/:id" element={<BookForm />} />
             <Route path="*" element={<Navigate to="/" />} />

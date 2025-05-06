@@ -39,7 +39,7 @@ public class BookApiBasicAuthHandler : AuthenticationHandler<AuthenticationSchem
             var password = credentials[1];
 
             // For demo purposes - replace with your actual user store
-            if (username != "admin" || password != "password")
+            if (username != "admin@bodonnell.com" || password != "password")
                 return AuthenticateResult.Fail("Invalid username or password");
 
             var claims = new[] {

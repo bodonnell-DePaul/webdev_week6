@@ -12,15 +12,23 @@ export const setBasicAuth = (username: string, password: string) => {
 export const configureBookApiWithBasicAuth = () => {
   const api = axios.create({
     baseURL: 'http://localhost:5137/api',
+
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': `Basic ${localStorage.getItem('basicAuth') || ''}`,
+    }
   });
 
-  api.interceptors.request.use(config => {
-    const credentials = localStorage.getItem('basicAuth');
-    if (credentials) {
-      config.headers.Authorization = `Basic ${credentials}`;
-    }
-    return config;
-  });
+//   api.interceptors.request.use(config => 
+//     {
+//         const credentials = localStorage.getItem('basicAuth');
+//         if (credentials) {
+//         config.headers.Authorization = `Basic ${credentials}`;
+//     }
+//     console.log('Request Config:', config);
+//     return config;
+//   });
 
   return api;
 };

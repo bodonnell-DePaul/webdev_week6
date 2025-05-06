@@ -15,7 +15,7 @@ const BookForm = () => {
     year: new Date().getFullYear(),
     genre: '',
     isAvailable: true,
-    publisher: '',
+    publisher: {id: -1, name: '', location: ''},
     audioBookAvailable: false,
     publisherId: -1
   });
@@ -127,7 +127,7 @@ const BookForm = () => {
             type="text"
             id="publisher"
             name="publisher"
-            value={book.publisher}
+            value={book.publisher.name}
             onChange={handleChange}
             required
           />
