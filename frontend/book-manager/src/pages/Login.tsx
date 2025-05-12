@@ -5,8 +5,9 @@ import { setBasicAuth } from '../services/authService';
 import { bookApi } from '../services/bookApi';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullname, setFullName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
@@ -19,7 +20,7 @@ const Login = () => {
     
     try {
       // Set the basic auth credentials
-      setBasicAuth(username, password);
+      setBasicAuth(email, password);
       
       // Test credentials by making a request to the API
       await bookApi.getAll();
@@ -29,7 +30,7 @@ const Login = () => {
     } catch (err) {
       // Clear invalid credentials on failure
       localStorage.removeItem('basicAuth');
-      setError('Invalid username or password');
+      setError('Invalid email or password');
       console.error('Login failed:', err);
     } finally {
       setLoading(false);
@@ -43,13 +44,24 @@ const Login = () => {
       {error && <div className="error-message">{error}</div>}
       
       <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="username">Username</label>
+      <div className="form-group">
+          <label htmlFor="fullname">Name</label>
           <input
             type="text"
-            id="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            id="fullname"
+            value={fullname}
+            onChange={(e) => setFullName(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="email">Email</label>
+          <input
+            type="text"
+            id="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
         </div>

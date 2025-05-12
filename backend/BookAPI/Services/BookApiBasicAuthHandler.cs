@@ -1,7 +1,10 @@
 using System;
 
 namespace BookAPI.Services;
+
+using BookAPI.Data;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
 using System.Security.Claims;
@@ -39,8 +42,12 @@ public class BookApiBasicAuthHandler : AuthenticationHandler<AuthenticationSchem
             var password = credentials[1];
 
             // For demo purposes - replace with your actual user store
-            if (username != "admin@bodonnell.com" || password != "password")
-                return AuthenticateResult.Fail("Invalid username or password");
+            using(var db = new UserDbContext(new DbContextOptions<UserDbContext>()))
+            {
+                var user = await db.Users.FirstOrDefaultAsync(u => u.Email == username && u.Password == password);
+                if (user == null)
+                    return AuthenticateResult.Fail("Invalid username or password");
+            }
 
             var claims = new[] {
                 new Claim(ClaimTypes.NameIdentifier, "1"),

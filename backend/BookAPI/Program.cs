@@ -63,8 +63,23 @@ app.UseCors("AllowReactApp");
 // Ensure database is created with seed data
 using (var scope = app.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<BookDbContext>();
-    dbContext.Database.EnsureCreated();
+    var bookDbContext = scope.ServiceProvider.GetRequiredService<BookDbContext>();
+    bookDbContext.Database.EnsureCreated();
+
+    var userDbContext = scope.ServiceProvider.GetRequiredService<UserDbContext>();
+    userDbContext.Database.EnsureCreated();
+    User user = new User
+    {
+        Name = "Admin",
+        Email = "admin@bodonnell.com", 
+        Password = "password",
+        CreatedAt = DateTime.UtcNow
+    };
+    if (!userDbContext.Users.Any(u => u.Email == user.Email))
+    {
+        userDbContext.Users.Add(user);
+        await userDbContext.SaveChangesAsync();
+    }
 }
 // Add usage before your existing endpoints
 app.UseAuthentication();
