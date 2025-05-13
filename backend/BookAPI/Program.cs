@@ -8,6 +8,9 @@ using System.Security.Claims;
 using BookAPI.Services;
 using BookAPI.Data;
 using Microsoft.EntityFrameworkCore;
+using static BookAPI.Models.AuthModels;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,6 +43,9 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 // Add EF Core with SQLite
 builder.Services.AddDbContext<BookDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("SqliteConnection")));
+
+builder.Services.AddDbContext<UserDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("UserDbConnection")));
 // Configure basic authentication
 builder.Services.AddAuthentication("BasicAuthentication")
     .AddScheme<AuthenticationSchemeOptions, BookApiBasicAuthHandler>("BasicAuthentication", null);
@@ -68,18 +74,6 @@ using (var scope = app.Services.CreateScope())
 
     var userDbContext = scope.ServiceProvider.GetRequiredService<UserDbContext>();
     userDbContext.Database.EnsureCreated();
-    User user = new User
-    {
-        Name = "Admin",
-        Email = "admin@bodonnell.com", 
-        Password = "password",
-        CreatedAt = DateTime.UtcNow
-    };
-    if (!userDbContext.Users.Any(u => u.Email == user.Email))
-    {
-        userDbContext.Users.Add(user);
-        await userDbContext.SaveChangesAsync();
-    }
 }
 // Add usage before your existing endpoints
 app.UseAuthentication();
@@ -102,6 +96,24 @@ app.MapGet("/HelloWorld", () =>
 .WithName("HelloWorld")
 .WithOpenApi();
 
+//Setup APIs
+app.MapGet("/init", (UserDbContext udb) =>
+{
+    User u = new User
+        {
+            Id = 1,
+            Name = "Admin",
+            Email = "admin@bodonnell.com",
+            Password = "password",
+            CreatedAt = DateTime.UtcNow
+        };
+    udb.Users.Add(u);
+    udb.SaveChanges();
+    udb.Database.ExecuteSqlRaw("PRAGMA wal_checkpoint;");
+
+    return Results.Ok(new { message = "API is running" });
+});
+
 // GET - Get all books
 app.MapGet("/api/books", async (BookDbContext db) =>
     await db.Books.ToListAsync())
@@ -110,8 +122,7 @@ app.MapGet("/api/books", async (BookDbContext db) =>
 // GET - Get all books with publishers
 app.MapGet("/api/publisherbooks", async (BookDbContext db) =>
      await db.Books.Include(b => b.Publisher).ToListAsync())
-     
-.WithName("GetAllPublisherBooks").RequireAuthorization();
+     .WithName("GetAllPublisherBooks").RequireAuthorization();
 
 // GET - Get a specific book by ID
 app.MapGet("/api/books/{id}", async (int id, BookDbContext db) =>
@@ -170,12 +181,56 @@ app.MapDelete("/api/books/{id}", async (int id, BookDbContext db) =>
     return Results.NoContent();
 })
 .WithName("DeleteBook");
-// Add a protected route
-// app.MapGet("/api/protected-books", (ClaimsPrincipal user) =>
-// {
-//     return books;
-// })
-// .WithName("GetProtectedBooks")
-// .RequireAuthorization();
+
+
+// New User Registration API
+app.MapPost("/api/register", async (User user, UserDbContext udb) =>
+{
+    // Check if the user already exists
+    var existingUser = await udb.Users.FirstOrDefaultAsync(u => u.Email == user.Email);
+    if (existingUser != null)
+    {
+        return Results.BadRequest("User already exists.");
+    }
+
+    // Add the new user to the database
+    udb.Users.Add(user);
+    await udb.SaveChangesAsync();
+    return Results.Created($"/api/users/{user.Id}", user);
+});
+
+// Auth endpoints
+app.MapPost("/api/login", (LoginRequest request) =>
+{
+    // Demo implementation - in a real app, verify against database
+    if (request.Email != "admin@example.com" || request.Password != "password")
+        return Results.Unauthorized();
+
+    var tokenHandler = new JwtSecurityTokenHandler();
+    var key = Encoding.UTF8.GetBytes("YourSuperSecretKeyForBookApiThatIsLongEnough");
+    
+    var tokenDescriptor = new SecurityTokenDescriptor
+    {
+        Subject = new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.Name, request.Email),
+            new Claim(ClaimTypes.Role, "Admin"),
+        }),
+        Expires = DateTime.UtcNow.AddHours(1),
+        Issuer = "BookAPI",
+        Audience = "BookUsers",
+        SigningCredentials = new SigningCredentials(
+            new SymmetricSecurityKey(key), 
+            SecurityAlgorithms.HmacSha256Signature)
+    };
+    
+    var token = tokenHandler.CreateToken(tokenDescriptor);
+    
+    return Results.Ok(new
+    {
+        accessToken = tokenHandler.WriteToken(token),
+        refreshToken = Convert.ToBase64String(Guid.NewGuid().ToByteArray())
+    });
+});
 
 app.Run();

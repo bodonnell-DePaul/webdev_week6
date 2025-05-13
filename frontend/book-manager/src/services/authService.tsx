@@ -1,5 +1,7 @@
 // frontend/book-manager/src/services/authService.tsx
 import axios, { AxiosInstance } from 'axios';
+import UserClaims from '../types/UserClaims';
+import { jwtDecode } from 'jwt-decode';
 
 // Store a single instance of the authenticated API
 let apiInstance: AxiosInstance | null = null;
@@ -45,4 +47,35 @@ export const configureBookApiWithBasicAuth = () => {
   });
 
   return apiInstance;
+};
+
+export const configureBookApiWithJwtAuth = () => {
+  // Return existing instance if available
+  if (apiInstance) return apiInstance;
+  
+  // Create new instance if none exists
+  apiInstance = axios.create({
+    baseURL: 'http://localhost:5137/api',
+  });
+
+  apiInstance.interceptors.request.use(config => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
+
+  return apiInstance;
+};
+
+export const getUser = (): UserClaims | null => {
+  const token = localStorage.getItem('accessToken');
+  if (!token) return null;
+  
+  try {
+    return jwtDecode<UserClaims>(token);
+  } catch {
+    return null;
+  }
 };

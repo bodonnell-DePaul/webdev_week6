@@ -10,6 +10,7 @@ const Login = () => {
   const [fullname, setFullName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
   
   const navigate = useNavigate();
 
@@ -19,8 +20,18 @@ const Login = () => {
     setError('');
     
     try {
+      // If new user, register the user
+      if (isNewUser) {
+        //const creds = setBasicAuth(email, password);
+        
+        await bookApi.registerUser(
+          { email, password: setBasicAuth(email, password), name: fullname }
+        );
+        // Optionally, you can handle the response here
+      }
       // Set the basic auth credentials
       setBasicAuth(email, password);
+      await bookApi.loginUser({ email, password });
       
       // Test credentials by making a request to the API
       await bookApi.getAll();
@@ -39,21 +50,33 @@ const Login = () => {
 
   return (
     <div className="login-form">
-      <h2>Login to Book Manager</h2>
+      <h2>{isNewUser ? 'Register' : 'Login'} to Book Manager</h2>
       
       {error && <div className="error-message">{error}</div>}
       
       <form onSubmit={handleSubmit}>
-      <div className="form-group">
+        <div className="form-group">
+          <label htmlFor="isNewUser">
+          <input
+            type="checkbox"
+            id="isNewUser"
+            checked={isNewUser}
+            onChange={(e) => setIsNewUser(e.target.checked)}
+          />
+          I am a new User</label>
+        </div>
+
+        {isNewUser && (<div className="form-group">
           <label htmlFor="fullname">Name</label>
           <input
             type="text"
             id="fullname"
             value={fullname}
             onChange={(e) => setFullName(e.target.value)}
-            required
+            required={isNewUser}
           />
         </div>
+        )}
 
         <div className="form-group">
           <label htmlFor="email">Email</label>

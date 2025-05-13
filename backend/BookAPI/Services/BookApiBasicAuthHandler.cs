@@ -38,15 +38,21 @@ public class BookApiBasicAuthHandler : AuthenticationHandler<AuthenticationSchem
 
             var credentialBytes = Convert.FromBase64String(authHeader.Parameter);
             var credentials = Encoding.UTF8.GetString(credentialBytes).Split(':', 2);
+            var securePassword = authHeader.Parameter;
             var username = credentials[0];
             var password = credentials[1];
 
             // For demo purposes - replace with your actual user store
-            using(var db = new UserDbContext(new DbContextOptions<UserDbContext>()))
+            using(var db = new UserDbContext())
             {
-                var user = await db.Users.FirstOrDefaultAsync(u => u.Email == username && u.Password == password);
-                if (user == null)
-                    return AuthenticateResult.Fail("Invalid username or password");
+                try{
+                    var user = await db.Users.FirstOrDefaultAsync(u => u.Email == username && u.Password == securePassword);
+                }
+                catch (Exception ex)
+                {
+                    return AuthenticateResult.Fail("Database error: " + ex.Message);
+                }
+                
             }
 
             var claims = new[] {
