@@ -20,8 +20,14 @@ export const bookApi = {
 
   create: async (book: Book): Promise<Book> => {
     const api = configureBookApiWithJwtAuth();
-    const response = await api.post<Book>(`/books`, book);
-    return response.data;
+    console.log('Sending book data:', JSON.stringify(book, null, 2));
+    try {
+      const response = await api.post<Book>(`/books`, book);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating book:', error.response?.data);
+      throw error;
+    }
   },
 
   update: async (id: number, book: Book): Promise<void> => {
