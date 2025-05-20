@@ -28,6 +28,36 @@ export const isAuthenticated = () => {
   return !!localStorage.getItem('basicAuth');
 };
 
+// Add OAuth login function
+export const initiateGoogleLogin = () => {
+  // Redirect to the backend endpoint that will start the OAuth flow
+  window.location.href = 'http://localhost:5137/auth/google';
+};
+
+// Handle OAuth callback
+export const handleOAuthCallback = async (code: string): Promise<boolean> => {
+  try {
+    const response = await fetch('http://localhost:5137/auth/google/callback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    
+    if (!response.ok) {
+      return false;
+    }
+    
+    const tokens = await response.json();
+    localStorage.setItem('accessToken', tokens.accessToken);
+    localStorage.setItem('refreshToken', tokens.refreshToken);
+    
+    return true;
+  } catch (error) {
+    console.error('OAuth callback error:', error);
+    return false;
+  }
+};
+
 // Get a configured API instance with Basic Auth
 export const configureBookApiWithBasicAuth = () => {
   // Return existing instance if available
@@ -67,6 +97,23 @@ export const configureBookApiWithJwtAuth = () => {
   });
 
   return apiInstance;
+};
+
+// Create an API client that includes the token from OAuth
+export const createOAuthBookApi = () => {
+  const api = axios.create({
+    baseURL: 'http://localhost:5137/api',
+  });
+
+  api.interceptors.request.use(config => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
+
+  return api;
 };
 
 export const getUser = (): UserClaims | null => {

@@ -1,8 +1,8 @@
 // frontend/book-manager/src/components/Login.tsx
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { setBasicAuth } from '../services/authService';
-import { bookApi } from '../services/bookApi';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { setBasicAuth, handleOAuthCallback, initiateGoogleLogin } from '../services/authService';
+import { bookApi} from '../services/bookApi';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -13,6 +13,34 @@ const Login = () => {
   const [isNewUser, setIsNewUser] = useState(false);
   
   const navigate = useNavigate();
+  const location = useLocation();
+
+   const handleGoogleLogin = (e: React.MouseEvent) => {
+    e.preventDefault();
+    initiateGoogleLogin();
+  };
+
+ // Check if we're returning from OAuth redirect
+  const handleOAuthRedirect = async () => {
+    const queryParams = new URLSearchParams(location.search);
+    const code = queryParams.get('code');
+    
+    if (code) {
+      setLoading(true);
+      const success = await handleOAuthCallback(code);
+      if (success) {
+        navigate('/');
+      } else {
+        setError('Failed to authenticate with Google');
+      }
+      setLoading(false);
+    }
+  };
+
+  // Call this in useEffect
+  useState(() => {
+    handleOAuthRedirect();
+  }, [location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +82,17 @@ const Login = () => {
       
       {error && <div className="error-message">{error}</div>}
       
+      <div className="oauth-options">
+        <p>Or login with:</p>
+        <button 
+          onClick={handleGoogleLogin} 
+          className="btn-google"
+          disabled={loading}
+        >
+          Login with Google
+        </button>
+      </div>
+
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="isNewUser">

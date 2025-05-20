@@ -1,6 +1,9 @@
 using BookAPI.Models;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OAuth;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.AspNetCore.Authorization;
 using System.Net.Http.Headers;
 using System.Text;
@@ -14,6 +17,48 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure authentication with multiple schemes
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = "JWT";
+})
+.AddBearerToken("JWT", options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = "BookAPI",
+        ValidAudience = "BookUsers",
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes("YourSuperSecretKeyForBookApiThatIsLongEnough"))
+    };
+})
+.AddCookie("ExternalCookies")
+.AddGoogle(options =>
+{
+    // Get these values from Google Cloud Console
+    options.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+    options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+
+    // Set callback path to match your frontend
+    options.CallbackPath = "/auth/google/callback";
+
+    // Use the temporary cookie scheme
+    options.SignInScheme = "ExternalCookies";
+
+    // Add scopes as needed
+    options.Scope.Add("profile");
+    options.Scope.Add("email");
+
+    // Map Google claims to standard claims
+    options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "sub");
+    options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
+    options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
+});
+
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -21,6 +66,7 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Book API", Version = "v1" });
 });
+
 
 // Add CORS support
 builder.Services.AddCors(options =>
@@ -58,6 +104,7 @@ builder.Services.AddAuthorization(options =>
         policy.RequireClaim(ClaimTypes.NameIdentifier);
     });
 });
+
 // Add services
 builder.Services.AddScoped<IUserService, UserService>();
 
@@ -87,7 +134,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.MapControllers(); 
+app.MapControllers();
 
 app.MapGet("/HelloWorld", () =>
 {
@@ -100,19 +147,79 @@ app.MapGet("/HelloWorld", () =>
 app.MapGet("/init", (UserDbContext udb) =>
 {
     User u = new User
-        {
-            Id = 1,
-            Name = "Admin",
-            Email = "admin@bodonnell.com",
-            Password = "password",
-            CreatedAt = DateTime.UtcNow
-        };
+    {
+        Id = 1,
+        Name = "Admin",
+        Email = "admin@bodonnell.com",
+        Password = "password",
+        CreatedAt = DateTime.UtcNow
+    };
     udb.Users.Add(u);
     udb.SaveChanges();
     udb.Database.ExecuteSqlRaw("PRAGMA wal_checkpoint;");
 
     return Results.Ok(new { message = "API is running" });
 });
+
+// OAuth endpoints and handlers
+app.MapGet("/auth/google", () => Results.Challenge(
+    new AuthenticationProperties { RedirectUri = "http://localhost:5173/login" },
+    new[] { GoogleDefaults.AuthenticationScheme })
+);
+
+// Handle the OAuth callback and generate JWT tokens
+app.MapPost("/auth/google/callback", async (HttpContext context, string code) =>
+{
+    // For a real implementation, handle the authorization code exchange
+    // Here we're simplifying by assuming the user is already authenticated via cookies
+    
+    var authenticateResult = await context.AuthenticateAsync("ExternalCookies");
+    if (!authenticateResult.Succeeded)
+    {
+        return Results.Unauthorized();
+    }
+
+    var claims = authenticateResult.Principal.Claims.ToList();
+    var email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+    
+    if (string.IsNullOrEmpty(email))
+    {
+        return Results.BadRequest("Email claim not found");
+    }
+    
+    // Generate JWT token
+    var tokenHandler = new JwtSecurityTokenHandler();
+    var key = Encoding.UTF8.GetBytes("YourSuperSecretKeyForBookApiThatIsLongEnough");
+    
+    var tokenDescriptor = new SecurityTokenDescriptor
+    {
+        Subject = new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.Email, email),
+            new Claim(ClaimTypes.Name, claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? email),
+            new Claim(ClaimTypes.NameIdentifier, claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? ""),
+            new Claim(ClaimTypes.Role, "User"), // Default role
+        }),
+        Expires = DateTime.UtcNow.AddHours(1),
+        Issuer = "BookAPI",
+        Audience = "BookUsers",
+        SigningCredentials = new SigningCredentials(
+            new SymmetricSecurityKey(key), 
+            SecurityAlgorithms.HmacSha256Signature)
+    };
+    
+    var token = tokenHandler.CreateToken(tokenDescriptor);
+    
+    // Sign out of the external cookie scheme
+    await context.SignOutAsync("ExternalCookies");
+    
+    return Results.Ok(new
+    {
+        accessToken = tokenHandler.WriteToken(token),
+        refreshToken = Convert.ToBase64String(Guid.NewGuid().ToByteArray())
+    });
+});
+
 
 // GET - Get all books
 app.MapGet("/api/books", async (BookDbContext db) =>
