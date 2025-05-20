@@ -3,7 +3,7 @@ using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.BearerToken;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using System.Net.Http.Headers;
 using System.Text;
@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using static BookAPI.Models.AuthModels;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication.Google;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,7 +23,7 @@ builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = "JWT";
 })
-.AddBearerToken("JWT", options =>
+.AddJwtBearer("JWT", options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
     {

@@ -38,9 +38,7 @@ const Login = () => {
   };
 
   // Call this in useEffect
-  useState(() => {
-    handleOAuthRedirect();
-  }, [location]);
+  useState(() => {handleOAuthRedirect();});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
