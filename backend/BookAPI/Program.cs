@@ -37,28 +37,28 @@ builder.Services.AddAuthentication(options =>
             Encoding.UTF8.GetBytes("YourSuperSecretKeyForBookApiThatIsLongEnough"))
     };
 })
-.AddCookie("ExternalCookies")
-.AddGoogle(options =>
-{
-    // Get these values from Google Cloud Console
-    options.ClientId = builder.Configuration["Authentication:Google:ClientId"];
-    options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+.AddCookie("ExternalCookies");
+// .AddGoogle(options =>
+// {
+//     // Get these values from Google Cloud Console
+//     options.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+//     options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
 
-    // Set callback path to match your frontend
-    options.CallbackPath = "/auth/google/callback";
+//     // Set callback path to match your frontend
+//     options.CallbackPath = "/auth/google/callback";
 
-    // Use the temporary cookie scheme
-    options.SignInScheme = "ExternalCookies";
+//     // Use the temporary cookie scheme
+//     options.SignInScheme = "ExternalCookies";
 
-    // Add scopes as needed
-    options.Scope.Add("profile");
-    options.Scope.Add("email");
+//     // Add scopes as needed
+//     options.Scope.Add("profile");
+//     options.Scope.Add("email");
 
-    // Map Google claims to standard claims
-    options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "sub");
-    options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
-    options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
-});
+//     // Map Google claims to standard claims
+//     options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "sub");
+//     options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
+//     options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
+// });
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -119,6 +119,8 @@ using (var scope = app.Services.CreateScope())
 {
     var bookDbContext = scope.ServiceProvider.GetRequiredService<BookDbContext>();
     bookDbContext.Database.EnsureCreated();
+    bookDbContext.Database.ExecuteSqlRaw("PRAGMA wal_checkpoint;");
+    
 
     var userDbContext = scope.ServiceProvider.GetRequiredService<UserDbContext>();
     userDbContext.Database.EnsureCreated();
