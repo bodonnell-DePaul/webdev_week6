@@ -1,11 +1,5 @@
 # webdev_week8
 
-boddev: boost this prompt: I need to give a lecture on the creation of webpages that deal with real time data.  The type of data does not matter, it can be stock market, transit GPS data or any type of real time data streams.  Provide me with detailed descriptions of different technologies needed for real time web applications including Web Sockets and Signal R.  If there are additonal technologies to be detailed include those technologies.  Also include detailed examples in both TypeScript and dotnet
-
-GitHub Copilot: Let me help you boost this prompt to get more detailed and structured content for your lecture on real-time web applications. 
-
-The boosted prompt provides a more structured and comprehensive approach for your lecture on real-time web applications. Let me create detailed content for your lecture based on this improved structure.
-
 # Real-Time Web Applications: Technologies and Implementation
 
 ## Introduction to Real-Time Web Applications
