@@ -56,7 +56,7 @@ const BookForm = () => {
         await bookApi.update(Number(id), book);
       } else {
         const pub = book.publisher;
-        book.publisher = {id: -1, name: pub, location: ''};
+        book.publisher = {id: -1, name: pub.name, location: ''};
         await bookApi.create(book);
       }
       navigate('/');
