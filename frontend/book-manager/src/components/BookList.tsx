@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import  Book  from '../types/Book';
 import { bookApi } from '../services/bookApi';
+import { ChatBot } from './ChatBot'; // Add this import
 
 const BookList = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isChatOpen, setIsChatOpen] = useState(false); // Add this state
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -107,6 +109,12 @@ const BookList = () => {
           </tbody>
         </table>
       )}
+      
+      {/* Add the ChatBot component */}
+      <ChatBot 
+        isOpen={isChatOpen} 
+        onToggle={() => setIsChatOpen(!isChatOpen)} 
+      />
     </div>
   );
 };

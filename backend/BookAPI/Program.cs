@@ -106,6 +106,9 @@ builder.Services.AddAuthorization(options =>
     });
 });
 
+// Add WebSocket support
+builder.Services.AddSingleton<ChatBotService>();
+
 // Add services
 builder.Services.AddScoped<IUserService, UserService>();
 
@@ -145,6 +148,23 @@ app.MapGet("/HelloWorld", () =>
 })
 .WithName("HelloWorld")
 .WithOpenApi();
+
+// Enable WebSocket support
+app.UseWebSockets();
+
+app.Map("/ws/chat", async (HttpContext context) =>
+{
+    if (context.WebSockets.IsWebSocketRequest)
+    {
+        var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+        var chatBotService = context.RequestServices.GetRequiredService<ChatBotService>();
+        await chatBotService.HandleWebSocketAsync(webSocket);
+    }
+    else
+    {
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+    }
+});
 
 //Setup APIs
 app.MapGet("/init", (UserDbContext udb) =>
