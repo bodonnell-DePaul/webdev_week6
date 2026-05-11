@@ -1,6 +1,4 @@
 # 📘 CI/CD — From Pipeline to Enterprise Delivery System
-## Instructor Notes (Combined Lecture)
-
 
 ---
 
