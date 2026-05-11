@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CI/CD: From Pipeline to Enterprise Delivery  CSC 436</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/night.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/highlight/monokai.min.css">
+  <style>
+    :root {
+      --depaul-blue: #1E4D8C;
+      --depaul-light: #3A7BD5;
+      --accent-green: #4EC9B0;
+      --accent-orange: #CE9178;
+      --accent-purple: #9B59B6;
+      --bg-dark: #1a1a2e;
+    }
+    .reveal { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    .reveal h1, .reveal h2, .reveal h3 { color: #fff; text-transform: none; font-weight: 600; }
+    .reveal h1 { font-size: 2.2em; }
+    .reveal h2 { font-size: 1.6em; }
+    .reveal h3 { font-size: 1.2em; color: var(--depaul-light); }
+    .reveal section { text-align: left; }
+    .reveal ul { margin-left: 0.5em; }
+    .reveal li { margin-bottom: 0.4em; font-size: 0.85em; }
+    .reveal code { color: var(--accent-green); background: rgba(30,77,140,0.2); padding: 0.1em 0.3em; border-radius: 4px; font-size: 0.9em; }
+    .reveal pre { width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.4); border-left: 4px solid var(--depaul-blue); }
+    .reveal pre code { background: #0d1117; padding: 1em; font-size: 0.52em; line-height: 1.5; max-height: 480px; }
+    .title-slide h1 { font-size: 2.2em; background: linear-gradient(135deg, var(--depaul-blue), var(--depaul-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .title-slide .subtitle { color: #aaa; font-size: 1.1em; margin-top: 0.5em; }
+    .accent { color: var(--depaul-light); }
+    .green { color: var(--accent-green); }
+    .orange { color: var(--accent-orange); }
+    .red { color: #f44747; }
+    .purple { color: var(--accent-purple); }
+    .pipeline-diagram { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0.3em; margin: 1em 0; }
+    .pipeline-box { background: var(--depaul-blue); color: #fff; padding: 0.5em 0.8em; border-radius: 8px; font-size: 0.72em; font-weight: 600; text-align: center; min-width: 75px; }
+    .pipeline-box.green-box { background: #2ea043; }
+    .pipeline-box.orange-box { background: #b08800; }
+    .pipeline-box.purple-box { background: #6f42c1; }
+    .pipeline-box.pink-box { background: #d63384; }
+    .pipeline-arrow { font-size: 1.3em; color: var(--depaul-light); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em; align-items: start; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1em; align-items: start; }
+    .callout { background: rgba(30,77,140,0.15); border-left: 4px solid var(--depaul-blue); padding: 0.7em 1em; border-radius: 0 8px 8px 0; margin: 0.7em 0; font-size: 0.8em; }
+    .callout.warn { border-left-color: #f44747; background: rgba(244,71,71,0.1); }
+    .callout.success { border-left-color: #4EC9B0; background: rgba(78,201,176,0.1); }
+    .callout.purple { border-left-color: var(--accent-purple); background: rgba(155,89,182,0.1); }
+    .hierarchy-box { border: 2px solid var(--depaul-blue); border-radius: 8px; padding: 0.5em 0.8em; margin: 0.3em 0; font-size: 0.8em; }
+    .hierarchy-box .hierarchy-box { border-color: var(--depaul-light); margin-left: 1.5em; }
+    .hierarchy-box .hierarchy-box .hierarchy-box { border-color: var(--accent-green); margin-left: 1.5em; }
+    .badge { display: inline-block; background: var(--depaul-blue); color: #fff; padding: 0.2em 0.6em; border-radius: 12px; font-size: 0.7em; margin: 0.15em; }
+    .comparison-table { width: 100%; border-collapse: collapse; font-size: 0.68em; margin-top: 0.5em; }
+    .comparison-table th { background: var(--depaul-blue); color: #fff; padding: 0.5em 0.8em; text-align: left; }
+    .comparison-table td { padding: 0.45em 0.8em; border-bottom: 1px solid #333; }
+    .comparison-table tr:nth-child(even) td { background: rgba(255,255,255,0.03); }
+    .card { background: rgba(30,77,140,0.12); border: 1px solid rgba(58,123,213,0.3); border-radius: 8px; padding: 0.7em 1em; font-size: 0.8em; }
+    .card h4 { color: var(--depaul-light); margin: 0 0 0.4em 0; font-size: 1em; }
+    .part-label { display: inline-block; background: rgba(58,123,213,0.2); color: var(--depaul-light); border: 1px solid var(--depaul-light); padding: 0.2em 0.7em; border-radius: 4px; font-size: 0.65em; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5em; }
+    .reveal .progress { color: var(--depaul-blue); }
+    .reveal .controls button { color: var(--depaul-light); }
+    .reveal .slide-number { color: var(--depaul-light); }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ============ SLIDE 1: Title ============ -->
+<section class="title-slide" data-background-gradient="radial-gradient(circle at 30% 50%, #16213e 0%, #0f0f1a 70%)">
+  <h1>CI/CD  From Pipeline<br>to Enterprise Delivery</h1>
+  <p class="subtitle">CSC 436: Web Applications (AI-Assisted Development)</p>
+  <div style="margin-top:1.5em; display:flex; gap:1em; flex-wrap:wrap;">
+    <span class="badge" style="background:#2ea043; font-size:0.8em;">GitHub Actions</span>
+    <span class="badge" style="font-size:0.8em;">Branch Protection</span>
+    <span class="badge" style="background:#6f42c1; font-size:0.8em;">Artifact Promotion</span>
+    <span class="badge" style="background:#b08800; font-size:0.8em;">Progressive Delivery</span>
+    <span class="badge" style="background:#0d6efd; font-size:0.8em;">IaC</span>
+    <span class="badge" style="background:#d63384; font-size:0.8em;">Azure</span>
+  </div>
+  <p style="color:#666; font-size:0.75em; margin-top:1.5em;">DePaul University &bull; College of Computing and Digital Media</p>
+  <aside class="notes">Today we cover the full CI/CD landscape  from writing your first workflow through to enterprise delivery governance. The first half is practical (GitHub Actions, Azure deployment, AI tooling). The second half is strategic (branch protection, artifact promotion, progressive delivery, IaC, observability, DORA metrics). Both halves are demonstrated by the ReleaseBoard sample app.</aside>
+</section>
+
+<!-- ============ SLIDE 2: Agenda ============ -->
+<section>
+  <h2> Agenda</h2>
+  <div class="two-col" style="font-size:0.85em;">
+    <div>
+      <p><span class="part-label">Part 1  Foundations</span></p>
+      <ul>
+        <li>What is CI/CD? Why does it matter?</li>
+        <li>CI/CD as an enterprise capability</li>
+        <li>GitHub Actions fundamentals</li>
+        <li>Triggers, secrets, matrix builds, caching</li>
+        <li>AI-assisted workflow generation &amp; pitfalls</li>
+      </ul>
+    </div>
+    <div>
+      <p><span class="part-label">Part 2  Enterprise Patterns</span></p>
+      <ul>
+        <li>Branch protection &amp; PR governance</li>
+        <li>Build once, promote many</li>
+        <li>Azure deployment options</li>
+        <li>Environments &amp; deployment gates</li>
+        <li>Infrastructure as Code</li>
+        <li>Progressive delivery strategies</li>
+        <li>Observability &amp; DORA metrics</li>
+        <li>ReleaseBoard demo</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes">Big picture: the first part is hands-on  writing and understanding workflows. The second part is strategic  how mature teams govern, protect, and observe their delivery systems. Both parts are demonstrated by the ReleaseBoard demo at the end.</aside>
+</section>
+
+<!-- ============ SLIDE 3: What is CI/CD? ============ -->
+<section>
+  <p class="part-label">Foundations</p>
+  <h2>What is CI/CD?</h2>
+  <div class="two-col">
+    <div>
+      <h3> Continuous Integration (CI)</h3>
+      <ul>
+        <li>Developers merge code <strong>frequently</strong> — at least daily</li>
+        <li>Every merge triggers <strong>automated build &amp; tests</strong></li>
+        <li>Catch bugs <em>before</em> they reach production</li>
+      </ul>
+      <h3 style="margin-top:0.8em;"> Continuous Delivery</h3>
+      <ul>
+        <li>Every passing build <em>could</em> be deployed</li>
+        <li>Human approves the release to production</li>
+        <li>Common in enterprise &amp; regulated industries</li>
+      </ul>
+    </div>
+    <div>
+      <h3> Continuous Deployment</h3>
+      <ul>
+        <li>Every passing build is <strong>automatically deployed</strong></li>
+        <li>No human gate  if tests pass, it ships</li>
+        <li>Requires excellent coverage and observability</li>
+      </ul>
+      <div class="callout" style="margin-top:1em;">
+        <strong>In this course:</strong> We practice Continuous <em>Delivery</em>  pipelines automate quality gates, but a GitHub environment protection rule approves production deploys.
+      </div>
+    </div>
+  </div>
+  <aside class="notes">Clarify the terminology carefully  students often use CI and CD interchangeably. Continuous Delivery means always-deployable; Continuous Deployment means always-deployed. In this course we practice delivery because it's the safer starting point and more common in enterprises.</aside>
+</section>
+
+<!-- ============ SLIDE 4: Why CI/CD? ============ -->
+<section>
+  <h2>Why CI/CD?</h2>
+  <div class="two-col">
+    <div>
+      <h3 class="green"> With CI/CD</h3>
+      <ul>
+        <li><strong>Faster feedback</strong>  broken code found in minutes</li>
+        <li><strong>Fewer production bugs</strong>  automated tests catch regressions</li>
+        <li><strong>Repeatable deployments</strong>  no "works on my machine"</li>
+        <li><strong>Team velocity</strong>  deploy multiple times per day</li>
+        <li><strong>Smaller changes</strong>  easier to review and debug</li>
+        <li><strong>Confidence</strong>  refactor without fear</li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="red"> Without CI/CD</h3>
+      <ul>
+        <li>Manual testing is slow and error-prone</li>
+        <li>"Big bang" releases cause big problems</li>
+        <li>Deployment is stressful and manual</li>
+        <li>Bugs discovered days or weeks later</li>
+        <li>Only one person knows how to deploy</li>
+        <li>No audit trail for what shipped</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout success" style="margin-top:0.8em;">
+    <strong>Goal:</strong> Make deployment <em>boring</em>. If shipping is stressful, the pipeline needs work.
+  </div>
+  <aside class="notes">The business case is clear. The key framing for students: CI/CD doesn't just benefit developers. Security teams get automated evidence. Operations teams get repeatable processes. Auditors get traceability. Everyone wins.</aside>
+</section>
+
+<!-- ============ SLIDE 5: The Pipeline ============ -->
+<section>
+  <h2>The CI/CD Pipeline</h2>
+  <div class="pipeline-diagram">
+    <div class="pipeline-box" style="background:#555;"> Commit</div>
+    <div class="pipeline-arrow"></div>
+    <div class="pipeline-box"> Lint</div>
+    <div class="pipeline-arrow"></div>
+    <div class="pipeline-box green-box"> Test</div>
+    <div class="pipeline-arrow"></div>
+    <div class="pipeline-box purple-box"> Build</div>
+    <div class="pipeline-arrow"></div>
+    <div class="pipeline-box orange-box"> Staging</div>
+    <div class="pipeline-arrow"></div>
+    <div class="pipeline-box pink-box"> Production</div>
+  </div>
+  <div class="two-col" style="font-size:0.8em; margin-top:0.5em;">
+    <div>
+      <p><strong>Fast feedback (minutes):</strong></p>
+      <ul>
+        <li><span class="badge">Lint</span> Code style &amp; static analysis</li>
+        <li><span class="badge" style="background:#2ea043;">Test</span> Unit &amp; integration tests</li>
+        <li><span class="badge" style="background:#6f42c1;">Build</span> Compile, bundle, typecheck</li>
+      </ul>
+    </div>
+    <div>
+      <p><strong>Deploy with gates:</strong></p>
+      <ul>
+        <li><span class="badge" style="background:#b08800;">Staging</span> Deploy for QA / review</li>
+        <li><span class="badge" style="background:#d63384;">Production</span> Deploy to users (approval required)</li>
+      </ul>
+      <div class="callout warn" style="margin-top:0.5em;">If any stage fails, the pipeline stops. Code does not advance until the current stage passes.</div>
+    </div>
+  </div>
+  <aside class="notes">This is the mental model students should carry. Every CI/CD system follows this sequence in some form. The critical rule: failure halts the pipeline. You never deploy code that hasn't passed the previous stages. This diagram is worth returning to throughout the lecture.</aside>
+</section>
+
+<!-- ============ SLIDE 6: CI/CD as Enterprise Capability ============ -->
+<section>
+  <h2>CI/CD as an Enterprise Capability</h2>
+  <div style="font-size:0.85em;">
+    <p>Enterprise CI/CD is not "a YAML file that runs tests." It is the <strong>delivery control plane</strong> for software change.</p>
+    <div class="two-col" style="margin-top:0.8em;">
+      <div>
+        <p><strong>It answers:</strong></p>
+        <ul>
+          <li>What changed?</li>
+          <li>Who reviewed it?</li>
+          <li>What evidence proves it was tested?</li>
+          <li>Which artifact was built from which commit?</li>
+          <li>Which environment received it?</li>
+          <li>Who approved the production release?</li>
+          <li>How do we know it is healthy?</li>
+          <li>How do we roll back safely?</li>
+        </ul>
+      </div>
+      <div>
+        <p><strong>Who benefits:</strong></p>
+        <div class="card" style="margin-bottom:0.5em;"><h4>Developers</h4>Fast feedback, small safe changes</div>
+        <div class="card" style="margin-bottom:0.5em;"><h4>Security teams</h4>Automated evidence and scanning</div>
+        <div class="card" style="margin-bottom:0.5em;"><h4>Operations</h4>Repeatable, observable deployments</div>
+        <div class="card"><h4>Auditors</h4>Traceability from PR to production</div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">This is the reframe from Week 10. Push students beyond "tests run on GitHub." Ask them: who else cares about your deployment pipeline besides you? Security teams want evidence that code was scanned. Auditors want traceability. Operations wants predictability. A mature pipeline serves all of these.</aside>
+</section>
+
+<!-- ============ SLIDE 7: GitHub Actions  Hierarchy ============ -->
+<section>
+  <p class="part-label">GitHub Actions</p>
+  <h2>GitHub Actions Fundamentals</h2>
+  <div class="two-col">
+    <div>
+      <h3>The Hierarchy</h3>
+      <div style="max-width:500px;">
+        <div class="hierarchy-box">
+          <strong> Workflow</strong> <span style="color:#888; font-size:0.8em;">(.github/workflows/ci.yml)</span>
+          <div class="hierarchy-box">
+            <strong> Job</strong> <span style="color:#888; font-size:0.8em;">(runs on a VM)</span>
+            <div class="hierarchy-box">
+              <strong> Step</strong> <span style="color:#888; font-size:0.8em;">(uses: actions/checkout@v4)</span>
+            </div>
+            <div class="hierarchy-box">
+              <strong> Step</strong> <span style="color:#888; font-size:0.8em;">(run: npm test)</span>
+            </div>
+          </div>
+          <div class="hierarchy-box">
+            <strong> Job</strong> <span style="color:#888; font-size:0.8em;">(runs in parallel by default)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:0.82em;">
+      <table class="comparison-table">
+        <thead><tr><th>Concept</th><th>What It Is</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Workflow</strong></td><td>YAML file in <code>.github/workflows/</code></td></tr>
+          <tr><td><strong>Trigger</strong></td><td>Event that starts the workflow</td></tr>
+          <tr><td><strong>Job</strong></td><td>Steps on one VM  parallel by default</td></tr>
+          <tr><td><strong>Step</strong></td><td>Shell command or reusable action</td></tr>
+          <tr><td><strong>Action</strong></td><td>Pre-built, reusable step</td></tr>
+          <tr><td><strong>Runner</strong></td><td>VM that executes the workflow</td></tr>
+        </tbody>
+      </table>
+      <div class="callout" style="margin-top:0.8em;">
+        Use <code>needs:</code> to chain jobs: <code>needs: lint-and-test</code> waits for the previous job to pass.
+      </div>
+    </div>
+  </div>
+  <aside class="notes">The hierarchy is the mental model. A workflow contains jobs. Jobs contain steps. Steps either run a shell command or call a reusable action. Jobs run in parallel by default. Use 'needs' to enforce sequential execution. Runners are free GitHub-hosted VMs.</aside>
+</section>
+
+<!-- ============ SLIDE 8: YAML Syntax & Triggers ============ -->
+<section>
+  <h2>Workflow YAML &amp; Triggers</h2>
+  <div class="two-col">
+    <div>
+      <pre><code class="language-yaml">name: CI Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'   # Monday 6am
+  workflow_dispatch:       # Manual button
+
+permissions:
+  contents: read           # Least privilege
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test</code></pre>
+    </div>
+    <div style="font-size:0.8em;">
+      <p><strong>Common triggers:</strong></p>
+      <table class="comparison-table">
+        <thead><tr><th>Trigger</th><th>Use for</th></tr></thead>
+        <tbody>
+          <tr><td><code>push</code></td><td>CI on main / deploy</td></tr>
+          <tr><td><code>pull_request</code></td><td>Checks before merge</td></tr>
+          <tr><td><code>schedule</code></td><td>Nightly security scans</td></tr>
+          <tr><td><code>workflow_dispatch</code></td><td>On-demand deploy button</td></tr>
+          <tr><td><code>release</code></td><td>Publish release artifacts</td></tr>
+        </tbody>
+      </table>
+      <div class="callout" style="margin-top:0.8em;">
+        <strong>Tip:</strong> Use <code>pull_request</code> for CI checks and <code>push</code> to <code>main</code> for deployments. Add <code>permissions: contents: read</code> to limit blast radius.
+      </div>
+    </div>
+  </div>
+  <aside class="notes">Point out the permissions block  this is something AI often omits. By default, GitHub Actions grants generous permissions to the GITHUB_TOKEN. Always explicitly restrict to what the workflow needs.</aside>
+</section>
+
+<!-- ============ SLIDE 9: Secrets, Env Vars & OIDC ============ -->
+<section>
+  <h2>Secrets, Environment Variables &amp; OIDC</h2>
+  <div class="two-col">
+    <div>
+      <h3>Secrets &amp; Env Vars</h3>
+      <pre><code class="language-yaml">jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: production
+    steps:
+      - name: Deploy
+        env:
+          # Secret injected  never echoed
+          API_KEY: ${{ secrets.API_KEY }}
+        run: ./deploy.sh</code></pre>
+      <div class="callout warn" style="font-size:0.75em; margin-top:0.5em;">
+        <strong>Never</strong> <code>echo ${{ secrets.X }}</code>  leaks to logs!
+      </div>
+    </div>
+    <div>
+      <h3>OIDC  Modern Auth</h3>
+      <pre><code class="language-yaml">permissions:
+  id-token: write
+  contents: read
+
+steps:
+  - uses: azure/login@v2
+    with:
+      client-id: ${{ secrets.AZURE_CLIENT_ID }}
+      tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+      subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}</code></pre>
+      <div class="callout purple" style="font-size:0.75em; margin-top:0.5em;">
+        <strong>OIDC:</strong> No stored password. GitHub exchanges a short-lived token with Azure. Token expires when the job ends.
+      </div>
+    </div>
+  </div>
+  <aside class="notes">OIDC is the modern best practice for cloud authentication. Instead of storing a static service principal password (which can be leaked or forgotten to rotate), GitHub federates with the cloud provider using a short-lived JWT. Explain the difference: classic secrets are "what you know," OIDC is "who you are."</aside>
+</section>
+
+<!-- ============ SLIDE 10: Matrix Builds & Caching ============ -->
+<section>
+  <h2>Matrix Builds &amp; Dependency Caching</h2>
+  <div class="two-col">
+    <div>
+      <h3>Matrix Builds</h3>
+      <pre><code class="language-yaml">jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test</code></pre>
+      <p style="font-size:0.78em;">GitHub spins up <strong>3 parallel VMs</strong>  one per version.</p>
+    </div>
+    <div>
+      <h3>Dependency Caching</h3>
+      <pre><code class="language-yaml"># Option 1: Built-in (recommended)
+- uses: actions/setup-node@v4
+  with:
+    node-version: '20'
+    cache: 'npm'
+
+# Option 2: Explicit control
+- uses: actions/cache@v4
+  with:
+    path: ~/.npm
+    key: npm-${{ hashFiles('**/package-lock.json') }}
+    restore-keys: |
+      npm-</code></pre>
+      <div class="callout success">Caching cuts install time from <strong>~60s  ~5s</strong></div>
+    </div>
+  </div>
+  <aside class="notes">Matrix builds are great for testing cross-version compatibility. The cache key uses a hash of package-lock.json  if deps haven't changed, the cache is reused. If they change, the cache is busted automatically. This is the #1 optimization for slow CI pipelines.</aside>
+</section>
+
+<!-- ============ SLIDE 11: Complete Production CI Workflow ============ -->
+<section>
+  <h2>Complete Production CI Workflow</h2>
+  <pre><code class="language-yaml">name: CI Pipeline
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm' }
+      - run: npm ci
+      - run: npx eslint . --max-warnings 0
+      - run: npx tsc --noEmit
+
+  test:
+    needs: lint-and-typecheck          # Chain: only runs if lint passes
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '${{ matrix.node-version }}', cache: 'npm' }
+      - run: npm ci && npm test -- --coverage
+
+  build-and-deploy:
+    needs: test                        # Chain: only runs if all tests pass
+    if: github.ref == 'refs/heads/main'  # Only on main
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm' }
+      - run: npm ci && npm run build
+      - uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_APP_NAME }}
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+          package: ./dist</code></pre>
+  <div class="callout success" style="font-size:0.78em;"> Lint  Test (3 Node versions, parallel)  Build  Deploy  all in ~5 minutes</div>
+  <aside class="notes">Walk through the chain: lint first (fastest), then parallel matrix tests, then build-and-deploy only on main. The 'if' condition is critical  it prevents PRs from triggering deployment. This is a production-ready starting point.</aside>
+</section>
+
+<!-- ============ SLIDE 12: AI-Generated Workflows ============ -->
+<section>
+  <p class="part-label">AI Tooling</p>
+  <h2> AI-Assisted Workflow Generation</h2>
+  <div class="two-col">
+    <div>
+      <h3 class="red"> Vague Prompt</h3>
+      <div class="callout warn">"Make me a GitHub Actions file"</div>
+      <p style="font-size:0.78em;">Too vague  what language? framework? where to deploy? what tests?</p>
+      <h3 class="green" style="margin-top:0.8em;"> Specific Prompt</h3>
+      <div class="callout success" style="font-size:0.78em;">"Generate a GitHub Actions CI/CD workflow for a Node.js 20 Express API that runs ESLint, Jest with coverage, and deploys to Azure App Service on push to main. Use npm ci and cache npm dependencies."</div>
+    </div>
+    <div style="font-size:0.8em;">
+      <p><strong>Always verify AI output:</strong></p>
+      <table class="comparison-table">
+        <thead><tr><th>Check</th><th>What to Look For</th></tr></thead>
+        <tbody>
+          <tr><td>Action versions</td><td>Use <code>@v4</code>  not <code>@v2</code></td></tr>
+          <tr><td>Node version</td><td>Match <code>.nvmrc</code>  avoid EOL (14, 16)</td></tr>
+          <tr><td>Secrets</td><td>Names match repo settings?</td></tr>
+          <tr><td>Working directory</td><td>Monorepo? Add <code>working-directory:</code></td></tr>
+          <tr><td>Permissions</td><td>Min necessary, not <code>write-all</code></td></tr>
+          <tr><td>Build output path</td><td><code>./dist</code> vs <code>./build</code>?</td></tr>
+        </tbody>
+      </table>
+      <div class="callout" style="margin-top:0.5em;"><strong>AI gets you ~80% there.</strong> You provide the last 20%.</div>
+    </div>
+  </div>
+  <aside class="notes">The prompt quality matters more than the tool. Specific context (runtime, test framework, linter, deployment target, caching strategy) produces production-ready output. Vague prompts produce generic, often incorrect YAML.</aside>
+</section>
+
+<!-- ============ SLIDE 13: Common AI Mistakes ============ -->
+<section>
+  <h2> Common AI Workflow Mistakes</h2>
+  <div class="two-col">
+    <div>
+      <h3 class="red">Security mistakes</h3>
+      <pre><code class="language-yaml">#  Leaks secret to logs
+- run: echo "Token: ${{ secrets.TOKEN }}"
+
+#  Supply chain risk  unpinned
+- uses: some-action@main
+
+#  Safe: inject as env var
+- name: Deploy
+  env:
+    TOKEN: ${{ secrets.TOKEN }}
+  run: ./deploy.sh
+
+#  Pinned to version
+- uses: actions/checkout@v4</code></pre>
+    </div>
+    <div>
+      <h3 class="red">Correctness mistakes</h3>
+      <pre><code class="language-yaml">#  Outdated / EOL versions
+- uses: actions/checkout@v2
+- uses: actions/setup-node@v4
+  with:
+    node-version: 14   # EOL!
+
+#  Missing DB service (tests fail)
+- run: npm test
+#  needs PostgreSQL but no service:
+
+#  Service container
+services:
+  postgres:
+    image: postgres:16
+    env:
+      POSTGRES_PASSWORD: test</code></pre>
+      <div class="callout warn" style="margin-top:0.5em; font-size:0.78em;"><strong>Always test on a branch first</strong>  not main.</div>
+    </div>
+  </div>
+  <aside class="notes">Most dangerous: echoing secrets. Even though GitHub masks them, encoding or splitting a secret can bypass masking. Second most common: outdated versions  AI training data is stale. Third: service containers for database tests are almost always missing from AI output.</aside>
+</section>
+
+<!-- ============ SLIDE 14: Main Branch as Production Contract ============ -->
+<section>
+  <p class="part-label">Enterprise Governance</p>
+  <h2>Main Branch as Production Contract</h2>
+  <div class="two-col">
+    <div style="font-size:0.83em;">
+      <p>Main should represent the version of the system that is <strong>releasable, supportable, and trusted</strong>. Branch protection creates that guarantee.</p>
+      <p><strong>What enterprises enforce:</strong></p>
+      <ul>
+        <li>Pull requests required before any merge</li>
+        <li>Required status checks (CI must pass)</li>
+        <li>Required code owner review</li>
+        <li>Required minimum approving reviewers (often 2)</li>
+        <li>Stale approval dismissal on new commits</li>
+        <li>Linear history / squash merge for audit trails</li>
+        <li>No force pushes or deletions</li>
+        <li>Admin bypasses are <em>visible and logged</em></li>
+      </ul>
+    </div>
+    <div style="font-size:0.83em;">
+      <h3>CODEOWNERS</h3>
+      <pre><code class="language-text"># .github/CODEOWNERS
+/src/auth/          @security-team
+/infrastructure/    @platform-team
+/.github/workflows/ @devops-team
+/migrations/        @backend-team @data-team</code></pre>
+      <p>CODEOWNERS maps paths to accountable reviewers. When tied to branch protection, it becomes <strong>enforcement</strong>, not just documentation.</p>
+      <div class="callout warn" style="margin-top:0.5em;">
+        <strong>Without protection:</strong> A single accidental push can bypass tests, skip review, or modify deployment credentials.
+      </div>
+    </div>
+  </div>
+  <aside class="notes">Frame this as a social contract: main represents a promise that the code is releasable. Protection rules are not bureaucracy  they are the enforcement mechanism for that promise. CODEOWNERS is particularly important: it routes sensitive areas of the codebase to the right reviewers automatically.</aside>
+</section>
+
+<!-- ============ SLIDE 15: PR as Unit of Change & Code Review ============ -->
+<section>
+  <h2>The PR as Unit of Change</h2>
+  <div class="two-col">
+    <div style="font-size:0.82em;">
+      <p>The pull request is where <strong>human judgment and automated evidence meet</strong>.</p>
+      <p><strong>Automated PR gates:</strong></p>
+      <ul>
+        <li>Lint, build, unit tests, type-check</li>
+        <li>Integration tests (disposable DB)</li>
+        <li>Dependency vulnerability scan</li>
+        <li>Secret scanning</li>
+        <li>SAST (static application security testing)</li>
+        <li>IaC formatting &amp; plan generation</li>
+        <li>Preview environment creation</li>
+      </ul>
+    </div>
+    <div style="font-size:0.82em;">
+      <p><strong>Human review focus:</strong></p>
+      <ul>
+        <li>Correctness and edge cases</li>
+        <li>Security and authorization</li>
+        <li>Maintainability</li>
+        <li>Operational impact (deploy &amp; rollback risk)</li>
+        <li>Test adequacy</li>
+        <li>Deployment and data risk</li>
+        <li>Does this change belong in <em>this</em> PR?</li>
+      </ul>
+      <div class="callout" style="margin-top:0.8em;">
+        Automated checks without human review miss context.<br>
+        Human review without automation is slow and inconsistent.<br>
+        <strong>Mature teams use both.</strong>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">A common misconception: "we have automated checks, so code review is just rubber-stamping." The opposite is true  automated checks free reviewers to focus on what machines can't catch: context, intent, edge cases, operational risk. Encourage students to think about what a good review actually looks at.</aside>
+</section>
+
+<!-- ============ SLIDE 16: Build Once, Promote Many ============ -->
+<section>
+  <p class="part-label">Artifact Management</p>
+  <h2>Build Once, Promote Many</h2>
+  <div class="pipeline-diagram" style="margin:0.8em 0;">
+    <div class="pipeline-box purple-box"> Build<br><small>On CI</small></div>
+    <div class="pipeline-arrow"></div>
+    <div class="pipeline-box"> Artifact<br><small>+ SHA tag</small></div>
+    <div class="pipeline-arrow"></div>
+    <div class="pipeline-box orange-box"> Staging<br><small>Same artifact</small></div>
+    <div class="pipeline-arrow"></div>
+    <div class="pipeline-box pink-box"> Production<br><small>Same artifact</small></div>
+  </div>
+  <div class="two-col" style="font-size:0.82em;">
+    <div>
+      <p><strong>Why this matters:</strong></p>
+      <ul>
+        <li>The thing that was tested <strong>must be the thing that ships</strong></li>
+        <li>Rebuilding for each environment introduces risk</li>
+        <li>Artifact is tagged with: git SHA, build number, branch, timestamp</li>
+        <li>If staging passes, production gets the <em>same bytes</em></li>
+      </ul>
+    </div>
+    <div>
+      <p><strong>What a mature artifact pipeline produces:</strong></p>
+      <ul>
+        <li>Backend package or container image</li>
+        <li>Frontend static asset bundle</li>
+        <li>Test reports and code coverage</li>
+        <li>SBOM (Software Bill of Materials)</li>
+        <li>Artifact signature + provenance metadata</li>
+        <li>Build number, git SHA, source branch</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes">This principle is often violated by teams that rebuild separately for staging and production. The rebuild may introduce environment-specific differences, different dependency resolutions (if package-lock is not committed), or different build outputs if build tools have bugs. Build once, tag with SHA, promote the same artifact.</aside>
+</section>
+
+<!-- ============ SLIDE 17: Supply Chain Security ============ -->
+<section>
+  <h2>Supply Chain Security</h2>
+  <div style="font-size:0.85em;">
+    <p><strong>"Can we prove where this artifact came from and that it was not tampered with?"</strong></p>
+    <div class="two-col" style="margin-top:0.8em;">
+      <div>
+        <p><strong>Practices:</strong></p>
+        <ul>
+          <li>Pin third-party Actions by SHA for sensitive workflows
+            <pre style="margin:0.3em 0;"><code class="language-yaml"># Pinned to SHA  not just tag
+- uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11</code></pre>
+          </li>
+          <li>Use scoped workflow permissions (<code>permissions: contents: read</code>)</li>
+          <li>Generate SBOMs (CycloneDX or SPDX format)</li>
+          <li>Sign container images (Sigstore/Cosign)</li>
+          <li>Use Dependabot or Renovate for intentional dependency updates</li>
+          <li>Track provenance: commit  workflow run  artifact  deployment</li>
+        </ul>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:0.8em;">
+          <h4>Why it matters</h4>
+          <p>An attacker who compromises an Action you depend on can inject malicious code into your build without touching your repository.</p>
+        </div>
+        <div class="card">
+          <h4>SLSA Framework</h4>
+          <p>Supply chain Levels for Software Artifacts  a graduated framework for provenance and build integrity. Level 3 requires hermetic, reproducible builds.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">The SolarWinds and XZ Utils attacks both exploited the software supply chain. These weren't "hack the application"  they were "compromise the build process." GitHub Actions is a supply chain component. Pinning to SHA prevents a compromised action from affecting your build even if the action's tag is moved.</aside>
+</section>
+
+<!-- ============ SLIDE 18: Azure Deployment Options ============ -->
+<section>
+  <p class="part-label">Azure Deployment</p>
+  <h2>Azure Deployment Options</h2>
+  <div class="two-col">
+    <div style="font-size:0.82em;">
+      <h3> Azure App Service</h3>
+      <p><strong>Best for:</strong> Node.js/Express APIs, .NET backends</p>
+      <ul>
+        <li>Fully managed PaaS  no server management</li>
+        <li>Auto-scaling, SSL, custom domains</li>
+        <li>Deployment slots for blue/green deploys</li>
+        <li>Built-in Application Insights</li>
+      </ul>
+      <pre><code class="language-yaml">- uses: azure/webapps-deploy@v3
+  with:
+    app-name: ${{ secrets.AZURE_APP_NAME }}
+    publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+    package: ./dist</code></pre>
+    </div>
+    <div style="font-size:0.82em;">
+      <h3> Azure Static Web Apps</h3>
+      <p><strong>Best for:</strong> React/Vue/Angular SPAs</p>
+      <ul>
+        <li>Free hosting with global CDN</li>
+        <li>Automatic HTTPS</li>
+        <li><strong>PR preview environments built-in</strong></li>
+        <li>Auto-generates GitHub Actions on setup</li>
+      </ul>
+      <pre><code class="language-yaml">- uses: Azure/static-web-apps-deploy@v1
+  with:
+    azure_static_web_apps_api_token: ${{ secrets.AZURE_SWA_TOKEN }}
+    action: "upload"
+    app_location: "/"
+    output_location: "dist"</code></pre>
+    </div>
+  </div>
+  <div class="callout" style="margin-top:0.5em; font-size:0.8em;">
+    <strong>Rule of thumb:</strong> Static Web Apps for the React frontend, App Service for the Express/.NET API.
+  </div>
+  <aside class="notes">Walk through the decision: if it needs a running server (Express, database connections), use App Service. If it's a static SPA built with React or Vite, use Static Web Apps. The PR preview feature in Static Web Apps is a genuine productivity boost  every PR gets a unique staging URL automatically.</aside>
+</section>
+
+<!-- ============ SLIDE 19: Environment Management & Gates ============ -->
+<section>
+  <p class="part-label">Environments & Gates</p>
+  <h2>Environments &amp; Deployment Gates</h2>
+  <div class="pipeline-diagram" style="margin:0.6em 0;">
+    <div class="pipeline-box" style="background:#2ea043;"> Dev / PR Preview</div>
+    <div class="pipeline-arrow"></div>
+    <div class="pipeline-box orange-box"> Staging</div>
+    <div class="pipeline-arrow"> <small style="font-size:0.7em;display:block;color:#f44747;">GATE</small></div>
+    <div class="pipeline-box pink-box"> Production</div>
+  </div>
+  <div class="two-col" style="font-size:0.8em;">
+    <div>
+      <pre><code class="language-yaml">jobs:
+  deploy-staging:
+    environment:
+      name: staging
+      url: https://staging.myapp.com
+    # uses staging secrets automatically
+
+  deploy-prod:
+    needs: deploy-staging
+    environment:
+      name: production
+      url: https://myapp.com
+    # PAUSES here  waits for approval</code></pre>
+    </div>
+    <div>
+      <p><strong>Production gate options:</strong></p>
+      <ul>
+        <li> Required reviewers  human approval</li>
+        <li> Wait timer  delay N minutes after staging</li>
+        <li> Branch restriction  only <code>main</code> can deploy to prod</li>
+        <li> Environment secrets  separate keys per env</li>
+      </ul>
+      <p><strong>Separation of duties:</strong> In regulated environments, the person who <em>writes</em> the change may not be allowed to <em>approve</em> and <em>deploy</em> it alone.</p>
+    </div>
+  </div>
+  <aside class="notes">The environment block in GitHub Actions is where you connect workflows to protection rules. Configure these under Settings  Environments. The workflow automatically pauses at the environment: block until the protection rules are satisfied. Environment secrets are only available to jobs that reference that environment.</aside>
+</section>
+
+<!-- ============ SLIDE 20: Infrastructure as Code ============ -->
+<section>
+  <p class="part-label">Infrastructure as Code</p>
+  <h2>Infrastructure as Code (IaC)</h2>
+  <div class="two-col">
+    <div style="font-size:0.82em;">
+      <p>Define cloud resources in <strong>code files</strong> instead of portal clicks.</p>
+      <p>IaC manages: networks, databases, identity, permissions, hosting, queues, DNS, monitoring, secrets configuration.</p>
+      <p><strong>Azure options:</strong></p>
+      <ul>
+        <li><span class="badge">Bicep</span> Azure-native, clean syntax, compiles to ARM</li>
+        <li><span class="badge" style="background:#7b42bc;">Terraform</span> Multi-cloud, large ecosystem</li>
+        <li><span class="badge" style="background:#555;">ARM</span> JSON templates  verbose, still supported</li>
+      </ul>
+      <div class="callout success" style="margin-top:0.8em;">
+        <strong>Benefits:</strong> Version-controlled, reviewable, repeatable. Recreate entire environments from scratch. Prevent configuration drift.
+      </div>
+    </div>
+    <div>
+      <h3>Bicep Example</h3>
+      <pre><code class="language-javascript">// infrastructure/main.bicep
+param appName string = 'course-api'
+param location string = resourceGroup().location
+
+resource plan 'Microsoft.Web/serverfarms@2022-09-01' = {
+  name: '${appName}-plan'
+  location: location
+  sku: { name: 'F1' }   // Free tier
+}
+
+resource app 'Microsoft.Web/sites@2022-09-01' = {
+  name: appName
+  location: location
+  properties: { serverFarmId: plan.id }
+}</code></pre>
+    </div>
+  </div>
+  <aside class="notes">IaC is version control for your cloud environment. Without it, someone can click through the portal and make a change that no one else knows about  "configuration drift." With IaC, the desired state is in Git, changes are reviewed, and the environment can be recreated from scratch at any time.</aside>
+</section>
+
+<!-- ============ SLIDE 21: IaC vs App Deployment ============ -->
+<section>
+  <h2>IaC vs. App Deployment  Different Risk Models</h2>
+  <table class="comparison-table" style="font-size:0.72em;">
+    <thead>
+      <tr><th>Dimension</th><th>Application Deployment</th><th>Infrastructure as Code</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Primary artifact</strong></td><td>App package, container, static bundle</td><td>Desired state definition</td></tr>
+      <tr><td><strong>Typical change</strong></td><td>Code behavior</td><td>Environment capabilities &amp; permissions</td></tr>
+      <tr><td><strong>Feedback mechanism</strong></td><td>Tests, health checks, logs</td><td>Plan/apply, drift detection, policy checks</td></tr>
+      <tr><td><strong>Rollback approach</strong></td><td>Redeploy previous artifact</td><td>Reconcile state  may not be simple</td></tr>
+      <tr><td><strong>Blast radius</strong></td><td>Usually one service</td><td>Can affect networking, data, identity, cost</td></tr>
+      <tr><td><strong>Review focus</strong></td><td>Correctness, user behavior</td><td>Security, cost, permissions, availability</td></tr>
+      <tr><td><strong>Approval model</strong></td><td>Release owner</td><td>Platform, security, finance owner</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn" style="margin-top:0.8em; font-size:0.82em;">
+    <strong>IaC pipeline pattern:</strong> Validate  Plan  Post plan to PR  Review  Apply after merge + environment approval<br>
+    Use <strong>separate workflows</strong> for IaC: <code>iac-plan.yml</code> on PR, <code>iac-apply.yml</code> after merge.
+  </div>
+  <aside class="notes">The key insight is that IaC requires a different mindset than application deployment. An app deployment affects one service. An IaC change can delete a database, open a firewall port, or change IAM permissions that affect dozens of services. The reviewer, the approval model, and the rollback strategy must all be different.</aside>
+</section>
+
+<!-- ============ SLIDE 22: Progressive Delivery  Blue/Green & Canary ============ -->
+<section>
+  <p class="part-label">Progressive Delivery</p>
+  <h2>Blue/Green, Red/Black &amp; Canary</h2>
+  <div class="two-col">
+    <div style="font-size:0.82em;">
+      <h3>Blue/Green (= Red/Black)</h3>
+      <div class="pipeline-diagram" style="margin:0.4em 0; justify-content:flex-start;">
+        <div class="pipeline-box green-box"> Blue<br><small>v1 live</small></div>
+        <div class="pipeline-arrow"> traffic</div>
+        <div class="pipeline-box orange-box"> Green<br><small>v2 ready</small></div>
+      </div>
+      <p>Two environments: one live, one receives new version. After validation, traffic switches.</p>
+      <ul>
+        <li> Fast rollback  switch traffic back</li>
+        <li> Zero downtime swap</li>
+        <li> Database must support both versions simultaneously</li>
+        <li> Cost of duplicate infrastructure</li>
+      </ul>
+      <div class="callout" style="font-size:0.78em;">In Azure App Service: <strong>deployment slots</strong> are built-in blue/green</div>
+    </div>
+    <div style="font-size:0.82em;">
+      <h3>Canary Deployment</h3>
+      <div class="pipeline-diagram" style="margin:0.4em 0; justify-content:flex-start;">
+        <div class="pipeline-box pink-box">Users 95%<br><small>v1</small></div>
+        <div class="pipeline-arrow">+</div>
+        <div class="pipeline-box green-box">Users 5%<br><small>v2 canary</small></div>
+      </div>
+      <p>Deploy new version to a small percentage. Measure. Expand or rollback.</p>
+      <ul>
+        <li> Real user measurement</li>
+        <li> Reduced blast radius</li>
+        <li> Requires traffic routing infrastructure</li>
+        <li> Needs clear success metrics</li>
+        <li> Automated rollback must be fast</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes">Blue/green is more common because it's simpler to reason about  either all traffic on the new version or all traffic on the old version. Canary is more sophisticated and requires good telemetry to know when to expand. Azure Traffic Manager and App Gateway support canary traffic splitting. Both strategies depend critically on observability  you need to be able to detect that something is wrong.</aside>
+</section>
+
+<!-- ============ SLIDE 23: Feature Flags & Rollback ============ -->
+<section>
+  <h2>Feature Flags &amp; Rollback Strategy</h2>
+  <div class="two-col">
+    <div style="font-size:0.82em;">
+      <h3>Feature Flags</h3>
+      <p><strong>Decouple deployment from release.</strong> Code ships but features are hidden until explicitly enabled.</p>
+      <ul>
+        <li> Dark launches  ship before enabling</li>
+        <li> Gradual rollout by user/tenant/ring</li>
+        <li> Kill switches for bad features</li>
+        <li> A/B testing</li>
+        <li> Flag debt accumulates over time</li>
+        <li> "Flag is off"  "feature is secure"  backend must still authorize</li>
+      </ul>
+      <div class="callout" style="font-size:0.78em;">ReleaseBoard demo shows this: toggle a flag, discuss deployment vs. release as separate decisions.</div>
+    </div>
+    <div style="font-size:0.82em;">
+      <h3>Rollback vs. Roll-Forward</h3>
+      <table class="comparison-table">
+        <thead><tr><th></th><th>Rollback</th><th>Roll-Forward</th></tr></thead>
+        <tbody>
+          <tr><td><strong>What</strong></td><td>Return to previous known-good version</td><td>Fix issue in new release, deploy immediately</td></tr>
+          <tr><td><strong>Good for</strong></td><td>Stateless regressions</td><td>Data migrations already applied</td></tr>
+          <tr><td><strong>Risk</strong></td><td>May undo data changes</td><td>Requires a fast pipeline</td></tr>
+        </tbody>
+      </table>
+      <div class="callout warn" style="margin-top:0.5em; font-size:0.78em;">
+        <strong>Always have a rollback plan before deploying.</strong> The question is not <em>if</em> a deploy will fail, but <em>when</em>.
+      </div>
+    </div>
+  </div>
+  <aside class="notes">Feature flags are one of the most powerful tools in progressive delivery. They let you ship code daily even if the feature isn't ready for users. But flag debt is real  unused flags accumulate, and the combination of multiple flags can become very complex. Always put a cleanup ticket on the backlog when you create a flag.</aside>
+</section>
+
+<!-- ============ SLIDE 24: Database Migrations ============ -->
+<section>
+  <p class="part-label">Data Strategy</p>
+  <h2>Database Migrations  The Hard Part</h2>
+  <div class="two-col">
+    <div style="font-size:0.82em;">
+      <p>Application code can roll back quickly. <strong>Databases cannot</strong>  data persists and may have been modified by the new version.</p>
+      <h3>Expand and Contract Pattern</h3>
+      <ol>
+        <li><strong>Expand:</strong> Add backward-compatible schema changes</li>
+        <li>Deploy code that tolerates both old and new formats</li>
+        <li>Backfill existing data</li>
+        <li>Switch reads to new structure</li>
+        <li><strong>Contract:</strong> Remove old columns after old version is retired</li>
+      </ol>
+    </div>
+    <div style="font-size:0.82em;">
+      <p><strong>Why migrations need their own gate:</strong></p>
+      <ul>
+        <li>Can lock large tables in production</li>
+        <li>Irreversible data changes</li>
+        <li>Can break older app versions still running during deployment</li>
+        <li>May fail under production data volume</li>
+        <li>Difficult or impossible to roll back</li>
+      </ul>
+      <div class="callout warn" style="margin-top:0.8em;">
+        Keep <code>db-migrate.yml</code> as a <strong>separate workflow</strong> with its own approval gate.<br>
+        <strong>Never hide migrations in application startup.</strong>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">This is often the biggest surprise for students who think rollback is simple. If the new code added a column and wrote data to it, you cannot just redeploy the old binary  the schema has changed. The expand-and-contract pattern is the safe way to manage schema evolution without downtime or data loss.</aside>
+</section>
+
+<!-- ============ SLIDE 25: Observability ============ -->
+<section>
+  <p class="part-label">Observability</p>
+  <h2>Monitoring &amp; Post-Deployment Validation</h2>
+  <div class="two-col">
+    <div style="font-size:0.82em;">
+      <p><strong>Deployment is not complete when the workflow turns green.</strong> It is complete when the system is healthy and the team can observe the impact.</p>
+      <h3>Essential signals:</h3>
+      <ul>
+        <li><code>/health/live</code>  is the process running?</li>
+        <li><code>/health/ready</code>  is it ready to serve traffic?</li>
+        <li>Error rate  trending up after deploy?</li>
+        <li>Latency  p50, p95, p99 response times</li>
+        <li>Saturation  CPU, memory, connection pool</li>
+        <li>Business metrics  conversion, orders, etc.</li>
+      </ul>
+    </div>
+    <div style="font-size:0.82em;">
+      <h3>Azure Application Insights</h3>
+      <pre><code class="language-javascript">const appInsights = require('applicationinsights');
+appInsights
+  .setup(process.env.APPINSIGHTS_CONNECTION_STRING)
+  .setAutoCollectRequests(true)
+  .setAutoCollectExceptions(true)
+  .start();</code></pre>
+      <h3 style="margin-top:0.8em;">Alert hygiene</h3>
+      <ul>
+        <li> Error rate &gt; 5%</li>
+        <li> Response time &gt; 3s (p95)</li>
+        <li> Availability &lt; 99%</li>
+        <li> Too many alerts = alert fatigue</li>
+        <li> Each alert must be <em>actionable</em></li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes">The "deployment is complete when the workflow turns green" trap is a culture problem. Deployments should include automatic post-deploy smoke tests and the team should watch dashboards for 15-30 minutes after a significant release. Health check endpoints are a contract between the application and the orchestration layer.</aside>
+</section>
+
+<!-- ============ SLIDE 26: Enterprise Operating Models & DORA ============ -->
+<section>
+  <p class="part-label">Enterprise Operations</p>
+  <h2>Operating Models &amp; DORA Metrics</h2>
+  <div class="two-col">
+    <div style="font-size:0.82em;">
+      <h3>Branching Strategies</h3>
+      <div class="card" style="margin-bottom:0.5em;">
+        <h4>Trunk-Based Development</h4>
+        <p>Small changes merge frequently to main behind feature flags. Fast integration, requires strong tests and flag discipline.</p>
+      </div>
+      <div class="card" style="margin-bottom:0.5em;">
+        <h4>GitFlow</h4>
+        <p>Long-lived release branches for scheduled releases. More merge complexity, slower integration.</p>
+      </div>
+      <div class="card">
+        <h4>Platform Teams &amp; Paved Roads</h4>
+        <p>A central team provides reusable workflow templates, deployment modules, and observability defaults. Product teams own their apps; the platform reduces duplicated DevOps work.</p>
+      </div>
+    </div>
+    <div style="font-size:0.82em;">
+      <h3>DORA Metrics</h3>
+      <table class="comparison-table">
+        <thead><tr><th>Metric</th><th>Measures</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Deployment frequency</strong></td><td>How often you ship to production</td></tr>
+          <tr><td><strong>Lead time for changes</strong></td><td>Commit to production time</td></tr>
+          <tr><td><strong>Change failure rate</strong></td><td>% of deploys causing incidents</td></tr>
+          <tr><td><strong>MTTR</strong></td><td>Time to restore after incident</td></tr>
+        </tbody>
+      </table>
+      <div class="callout" style="margin-top:0.8em; font-size:0.78em;">
+        <strong>Don't chase metrics blindly.</strong> Use them to diagnose whether the delivery system is fast, safe, and recoverable. High change failure rate? Fix testing before optimizing frequency.
+      </div>
+    </div>
+  </div>
+  <aside class="notes">DORA metrics come from Google's State of DevOps research. Elite performing teams deploy multiple times per day with low failure rates. But the metrics are diagnostic tools, not goals. A team with 50% change failure rate should not focus on increasing deployment frequency  they need better testing and gating first.</aside>
+</section>
+
+<!-- ============ SLIDE 27: ReleaseBoard Demo ============ -->
+<section>
+  <p class="part-label">Demo</p>
+  <h2> ReleaseBoard  Enterprise CI/CD Demo</h2>
+  <div class="two-col">
+    <div style="font-size:0.82em;">
+      <p><strong>What ReleaseBoard shows:</strong></p>
+      <ul>
+        <li>React frontend with Dashboard, Releases, Environments, Feature Flags, and Audit log pages</li>
+        <li>ASP.NET Core minimal API backend with EF Core + SQLite</li>
+        <li>Health endpoints: <code>/api/health/live</code>, <code>/api/health/ready</code></li>
+        <li>Version endpoint: <code>/api/version</code> (git SHA, build number, env)</li>
+      </ul>
+      <p><strong>Demo flow:</strong></p>
+      <ol style="font-size:0.9em;">
+        <li>Open dashboard  point to build/version metadata</li>
+        <li>Show environments and deployment history</li>
+        <li>Toggle a feature flag  deployment  release</li>
+        <li>Open audit events  traceability in action</li>
+        <li>Walk through the workflow files</li>
+      </ol>
+    </div>
+    <div style="font-size:0.78em;">
+      <p><strong>Workflow files to walk through:</strong></p>
+      <ul>
+        <li><code>pr-validate.yml</code>  lint, test, build, security scan</li>
+        <li><code>ci-build-artifact.yml</code>  build once, tag SHA</li>
+        <li><code>cd-deploy-staging.yml</code>  promote to staging</li>
+        <li><code>cd-deploy-prod.yml</code>  gated production deploy</li>
+        <li><code>iac-plan.yml</code> / <code>iac-apply.yml</code>  separate IaC pipeline</li>
+        <li><code>db-migrate.yml</code>  explicit migration gate</li>
+        <li><code>nightly-security.yml</code>  scheduled dependency + SAST scan</li>
+      </ul>
+      <div class="callout purple" style="margin-top:0.8em;">
+        <strong>Framing:</strong> The YAML exists to make the repo complete. The lesson is the <em>design</em> behind each workflow  what evidence does it create? What risk does each gate reduce?
+      </div>
+    </div>
+  </div>
+  <aside class="notes">As you walk through the demo, for each workflow file ask students: Who runs this? What would happen if this check didn't exist? What evidence does the audit log for this? Connect the concrete YAML back to the concepts: branch protection, artifact promotion, environment gates, IaC separation, database migration safety.</aside>
+</section>
+
+<!-- ============ SLIDE 28: Key Takeaways ============ -->
+<section>
+  <h2> Key Takeaways</h2>
+  <div style="font-size:0.85em;">
+    <div class="two-col">
+      <div>
+        <p><span class="part-label">Practical</span></p>
+        <ol>
+          <li><strong>GitHub Actions</strong>  workflows, triggers, secrets, matrix, caching</li>
+          <li><strong>AI generates ~80%</strong> of a good workflow  verify versions, secrets, paths</li>
+          <li><strong>Azure App Service</strong> for APIs, <strong>Static Web Apps</strong> for SPAs</li>
+          <li><strong>OIDC</strong> over static secrets for cloud auth</li>
+        </ol>
+      </div>
+      <div>
+        <p><span class="part-label">Strategic</span></p>
+        <ol start="5">
+          <li><strong>Branch protection</strong> creates a reliable production contract</li>
+          <li><strong>Build once</strong>  the tested artifact is the shipped artifact</li>
+          <li><strong>IaC</strong> has different risk, reviewers, and rollback than app deploys</li>
+          <li><strong>Progressive delivery</strong> reduces blast radius  but needs observability</li>
+          <li><strong>Database migrations</strong> need explicit strategy and separate gates</li>
+          <li><strong>DORA metrics</strong> diagnose delivery system health  not goals to game</li>
+        </ol>
+      </div>
+    </div>
+    <div class="callout success" style="margin-top:0.8em;">
+      <strong>The goal:</strong> Make deployment <em>boring</em>. Fast feedback. Auditable evidence. Safe rollback. Observable impact.
+    </div>
+  </div>
+  <aside class="notes">Summarize the two threads: practical GitHub Actions skills they can use today, and enterprise design patterns they'll encounter in their careers. The thread connecting everything is: CI/CD is a system for change, evidence, and trust  not just automation for automation's sake.</aside>
+</section>
+
+<!-- ============ SLIDE 29: Q&A / Resources ============ -->
+<section data-background-gradient="radial-gradient(circle at 30% 50%, #16213e 0%, #0f0f1a 70%)">
+  <h2> Questions &amp; Resources</h2>
+  <div style="font-size:0.85em; text-align:center;">
+    <p style="font-size:1.1em; margin-bottom:1em;">Questions?</p>
+    <div style="text-align:left; max-width:600px; margin:0 auto;">
+      <div class="two-col">
+        <div>
+          <p><strong>Official Docs:</strong></p>
+          <ul style="font-size:0.85em;">
+            <li><a href="https://docs.github.com/en/actions" style="color:var(--depaul-light);">GitHub Actions</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/app-service/" style="color:var(--depaul-light);">Azure App Service</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/static-web-apps/" style="color:var(--depaul-light);">Azure Static Web Apps</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/" style="color:var(--depaul-light);">Azure Bicep</a></li>
+          </ul>
+        </div>
+        <div>
+          <p><strong>Further Reading:</strong></p>
+          <ul style="font-size:0.85em;">
+            <li><a href="https://dora.dev/research/" style="color:var(--depaul-light);">DORA Research</a></li>
+            <li><a href="https://owasp.org/www-project-top-10-ci-cd-security-risks/" style="color:var(--depaul-light);">OWASP CI/CD Security Top 10</a></li>
+            <li><a href="https://slsa.dev/" style="color:var(--depaul-light);">SLSA Supply Chain Framework</a></li>
+            <li><a href="https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/about-security-hardening-with-openid-connect" style="color:var(--depaul-light);">OIDC in Actions</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">Leave time for questions. Point students to the ReleaseBoard sample app as a working reference they can fork and explore. Encourage them to walk through each workflow file and ask: what would happen if this gate didn't exist?</aside>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /reveal -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/highlight/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/notes/notes.min.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    showSlideNumber: 'all',
+    transition: 'slide',
+    transitionSpeed: 'default',
+    backgroundTransition: 'fade',
+    width: 1200,
+    height: 700,
+    margin: 0.06,
+    plugins: [RevealHighlight, RevealNotes]
+  });
+</script>
+</body>
+</html>
