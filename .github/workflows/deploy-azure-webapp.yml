@@ -1,0 +1,132 @@
+name: Deploy ReleaseBoard To Azure
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - enterprise-cicd-demo/**
+      - .github/workflows/deploy-azure-webapp.yml
+  workflow_dispatch:
+    inputs:
+      environmentName:
+        description: Deployment environment name passed to Bicep
+        required: false
+        default: staging
+      location:
+        description: Azure region for resource group and deployment
+        required: false
+        default: eastus
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  WORKING_DIR: enterprise-cicd-demo
+  API_PROJECT: enterprise-cicd-demo/ReleaseBoard.Api/ReleaseBoard.Api.csproj
+  BICEP_FILE: enterprise-cicd-demo/infrastructure/main.bicep
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore and test API
+        run: |
+          dotnet restore "${{ env.WORKING_DIR }}/ReleaseBoard.sln"
+          dotnet test "${{ env.WORKING_DIR }}/ReleaseBoard.sln" --configuration Release --no-restore
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: enterprise-cicd-demo/client/package-lock.json
+
+      - name: Build client
+        working-directory: enterprise-cicd-demo/client
+        run: |
+          npm ci
+          npm run lint
+          npm test
+          npm run build
+
+      - name: Publish API
+        run: dotnet publish "${{ env.API_PROJECT }}" --configuration Release --output "${{ github.workspace }}/publish-api"
+
+      - name: Upload API artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: releaseboard-api
+          path: ${{ github.workspace }}/publish-api
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment: ${{ github.event.inputs.environmentName || 'staging' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download API artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: releaseboard-api
+          path: ${{ github.workspace }}/publish-api
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Ensure resource group exists
+        env:
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          AZURE_LOCATION: ${{ github.event.inputs.location || 'eastus' }}
+        run: az group create --name "$AZURE_RESOURCE_GROUP" --location "$AZURE_LOCATION"
+
+      - name: Deploy infrastructure with Bicep
+        id: bicep
+        env:
+          AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          ENVIRONMENT_NAME: ${{ github.event.inputs.environmentName || 'staging' }}
+          AZURE_LOCATION: ${{ github.event.inputs.location || 'eastus' }}
+        run: |
+          API_HOST_NAME=$(az deployment group create \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --template-file "${{ env.BICEP_FILE }}" \
+            --parameters environmentName="$ENVIRONMENT_NAME" location="$AZURE_LOCATION" \
+            --query properties.outputs.apiHostName.value \
+            --output tsv)
+
+          if [ -z "$API_HOST_NAME" ]; then
+            echo "Bicep output apiHostName is empty."
+            exit 1
+          fi
+
+          API_APP_NAME="${API_HOST_NAME%%.*}"
+
+          echo "apiHostName=$API_HOST_NAME" >> "$GITHUB_OUTPUT"
+          echo "apiAppName=$API_APP_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy API to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ steps.bicep.outputs.apiAppName }}
+          package: ${{ github.workspace }}/publish-api
+
+      - name: Deployment summary
+        run: |
+          echo "API deployed to https://${{ steps.bicep.outputs.apiHostName }}" >> "$GITHUB_STEP_SUMMARY"
