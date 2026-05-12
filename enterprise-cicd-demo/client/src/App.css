@@ -1,0 +1,258 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #0f172a;
+  color: #e5edf7;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  border: 0;
+  border-radius: 999px;
+  background: #38bdf8;
+  color: #082f49;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 0.75rem 1rem;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.app-shell {
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: 2rem;
+}
+
+.hero {
+  align-items: center;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(251, 191, 36, 0.14));
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 28px;
+  display: flex;
+  gap: 2rem;
+  justify-content: space-between;
+  padding: 2rem;
+}
+
+.hero h1 {
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  letter-spacing: -0.08em;
+  line-height: 0.9;
+  margin: 0;
+}
+
+.hero p {
+  color: #bac7d8;
+  max-width: 680px;
+}
+
+.eyebrow {
+  color: #fbbf24;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.version-card,
+.panel,
+.stat-card {
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 22px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+}
+
+.version-card {
+  min-width: 260px;
+  padding: 1.25rem;
+}
+
+.version-card span,
+.stat-card span {
+  color: #93c5fd;
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.version-card strong {
+  display: block;
+  font-size: 1.4rem;
+  margin: 0.35rem 0;
+}
+
+.version-card small,
+.stat-card small,
+.list-card small,
+.audit-event small {
+  color: #94a3b8;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+
+.nav a {
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 999px;
+  color: #cbd5e1;
+  font-weight: 700;
+  padding: 0.7rem 1rem;
+  text-decoration: none;
+}
+
+.nav a.active {
+  background: #fbbf24;
+  color: #1e293b;
+}
+
+.stats-grid,
+.grid-three {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.grid-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.grid-two {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.panel,
+.stat-card {
+  padding: 1.25rem;
+}
+
+.panel {
+  margin-bottom: 1rem;
+}
+
+.stat-card strong {
+  display: block;
+  font-size: 3rem;
+  line-height: 1;
+  margin: 0.45rem 0;
+}
+
+.timeline {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(5, 1fr);
+  margin: 1rem 0;
+}
+
+.timeline span {
+  background: rgba(56, 189, 248, 0.13);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 16px;
+  color: #dff6ff;
+  font-weight: 800;
+  padding: 0.9rem;
+  text-align: center;
+}
+
+.list-card,
+.flag-row,
+.audit-event {
+  align-items: center;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1rem 0;
+}
+
+.list-card h3,
+.flag-row h3 {
+  margin: 0 0 0.35rem;
+}
+
+.list-card p,
+.flag-row p,
+.audit-event p {
+  color: #bac7d8;
+  margin: 0.2rem 0;
+}
+
+.status {
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 0.4rem 0.65rem;
+  text-transform: uppercase;
+}
+
+.succeeded,
+.production {
+  background: rgba(34, 197, 94, 0.18);
+  color: #86efac;
+}
+
+.failed,
+.rolledback {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+}
+
+.staging,
+.candidate,
+.pending,
+.running {
+  background: rgba(251, 191, 36, 0.18);
+  color: #fde68a;
+}
+
+.environment {
+  min-height: 220px;
+}
+
+.environment strong {
+  color: #fbbf24;
+  display: block;
+  margin: 1rem 0;
+}
+
+.error {
+  border-color: rgba(252, 165, 165, 0.5);
+}
+
+code {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 0.1rem 0.35rem;
+}
+
+@media (max-width: 900px) {
+  .hero,
+  .grid-two,
+  .grid-three,
+  .stats-grid,
+  .timeline {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
